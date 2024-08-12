@@ -149,10 +149,11 @@ def compute_trajectory2(right_points, left_points):
     last_ri = 0
     last_li = 0
     while last_ri<len(right_points)-1 and last_li<len(left_points)-1:
-        distr = euclidean_norm(rpoints[last_ri], rpoints[last_ri+1]) + euclidean_norm(lpoints[last_li], rpoints[last_ri+1])
-        distl = euclidean_norm(lpoints[last_li], lpoints[last_li+1]) + euclidean_norm(rpoints[last_ri], lpoints[last_li+1])
+        if last_ri!=len(right_points)-1 and last_li!=len(left_points)-1:
+            distr = euclidean_norm(rpoints[last_ri], rpoints[last_ri+1]) + euclidean_norm(lpoints[last_li], rpoints[last_ri+1])
+            distl = euclidean_norm(lpoints[last_li], lpoints[last_li+1]) + euclidean_norm(rpoints[last_ri], lpoints[last_li+1])
 
-        if distr<=distl:
+        if distr<=distl or last_li == len(left_points)-1:
             last_ri +=1
             last_cone = rpoints[last_ri]
             other_last_cone = lpoints[last_li]
@@ -166,20 +167,23 @@ def compute_trajectory2(right_points, left_points):
         perp_slope = - 1 / slope
         new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
 
-        #In case the new point is too close to the last cone
-        if euclidean_norm(new_point, last_cone) < 1.5:
+        #In case the new point is too close or too far to the last cone
+        if euclidean_norm(new_point, last_cone) != 1.5:
             vector = [new_point[0]-last_cone[0], new_point[1]-last_cone[1]]
             norm = euclidean_norm(vector, [0,0])
             vector = [1.5 * vector[0]/norm, 1.5 * vector[1]/norm]
             new_point2 = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            new_point = new_point2
             print(f"Too close last ri:{last_ri}, last_li: {last_li}")
             
+            # Trying to prevent getting outside
             if euclidean_norm(new_point, other_last_cone)< euclidean_norm(new_point2, other_last_cone):
-                new_point = compute_midpoint(last_cone, other_last_cone)
+                new_point = [ - new_point2[0], - new_point2[1]]
                 print("Taking mid point instead")
             
 
         mid_points.append(new_point)
+        print(f"End iteration last ri:{last_ri}, last_li: {last_li}")
 
 
     return mid_points
@@ -267,7 +271,7 @@ if __name__ == "__main__":
             filename = ''
     
     og_right_points, og_left_points = deserialize_points(file_path="map.dat")
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=0)
     #right_points, left_points = disorder_points(right_points, left_points)
     #mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     mid_points = compute_trajectory2(right_points, left_points)
