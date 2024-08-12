@@ -155,14 +155,30 @@ def compute_trajectory2(right_points, left_points):
         if distr<=distl:
             last_ri +=1
             last_cone = rpoints[last_ri]
+            other_last_cone = lpoints[last_li]
             slope = compute_slope(rpoints[last_ri-1], last_cone)
         else:
             last_li +=1
             last_cone = lpoints[last_li]
+            other_last_cone = rpoints[last_ri]
             slope = compute_slope(lpoints[last_li-1], last_cone)
 
         perp_slope = - 1 / slope
         new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
+
+        #In case the new point is too close to the last cone
+        if euclidean_norm(new_point, last_cone) < 1.5:
+            vector = [new_point[0]-last_cone[0], new_point[1]-last_cone[1]]
+            norm = euclidean_norm(vector, [0,0])
+            vector = [1.5 * vector[0]/norm, 1.5 * vector[1]/norm]
+            new_point2 = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            print(f"Too close last ri:{last_ri}, last_li: {last_li}")
+            
+            if euclidean_norm(new_point, other_last_cone)< euclidean_norm(new_point2, other_last_cone):
+                new_point = compute_midpoint(last_cone, other_last_cone)
+                print("Taking mid point instead")
+            
+
         mid_points.append(new_point)
 
 
