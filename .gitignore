@@ -1,2 +1,4 @@
 .vscode/
 *.dat
+*.png
+test.py
