@@ -266,7 +266,7 @@ def compute_trajectory2_wsteps_circ(right_points, left_points):
             print(f"Too close to last cone, separating to 1.5")
             
         # Trying to prevent getting outside with circunferences
-        if euclidean_norm(other_last_cone, last_cone) <= euclidean_norm(other_last_cone ,new_point):
+        if euclidean_norm(other_last_cone, last_cone) < 0.95 * euclidean_norm(other_last_cone ,new_point):
             vector = compute_vector(last_cone, new_point)
             vector = rotate_180(vector)
             # Plot the circles
@@ -372,7 +372,7 @@ def compute_trajectory2_wsteps_slopes(right_points, left_points):
             new_point = new_point2
             print(f"Too close to last cone, separating to 1.5")
             
-        # Trying to prevent getting outside with circunferences
+        # Trying to prevent getting outside with slopes
         slope_list = [slope, other_slope] if slope < other_slope else [other_slope, slope]
         cond = compute_slope(anchor_slope, new_point) > slope_list[0] and compute_slope(anchor_slope, new_point) < slope_list[1]
         if cond == False:
@@ -489,11 +489,11 @@ if __name__ == "__main__":
             filename = ''
     
     og_right_points, og_left_points = deserialize_points(file_path=filename)
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=1)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
-    # mid_points = compute_trajectory2_wsteps_slopes(right_points, left_points)
-    mid_points = compute_trajectory2_wsteps_circ(right_points, left_points)
+    mid_points = compute_trajectory2_wsteps_slopes(right_points, left_points)
+    # mid_points = compute_trajectory2_wsteps_circ(right_points, left_points)
     plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
     
