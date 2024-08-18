@@ -209,7 +209,7 @@ def compute_trajectory2(right_points, left_points):
     return mid_points
 
 
-def compute_trajectory2_wsteps(right_points, left_points):
+def compute_trajectory2_wsteps_circ(right_points, left_points):
     # Assert the points are correctly ordered
     rpoints = order_point_list(right_points)
     lpoints = order_point_list(left_points)
@@ -239,6 +239,7 @@ def compute_trajectory2_wsteps(right_points, left_points):
             last_cone = rpoints[last_ri]
             other_last_cone = lpoints[last_li]
             slope = compute_slope(rpoints[last_ri-1], last_cone)
+            # For plotting
             p1 = rpoints[last_ri-1]
             p2 = last_cone
         else:
@@ -246,6 +247,7 @@ def compute_trajectory2_wsteps(right_points, left_points):
             last_cone = lpoints[last_li]
             other_last_cone = rpoints[last_ri]
             slope = compute_slope(lpoints[last_li-1], last_cone)
+            # For plotting
             p1 = lpoints[last_li-1]
             p2 = last_cone
         
@@ -263,7 +265,7 @@ def compute_trajectory2_wsteps(right_points, left_points):
             new_point = new_point2
             print(f"Too close to last cone, separating to 1.5")
             
-        # Trying to prevent getting outside
+        # Trying to prevent getting outside with circunferences
         if euclidean_norm(other_last_cone, last_cone) <= euclidean_norm(other_last_cone ,new_point):
             vector = compute_vector(last_cone, new_point)
             vector = rotate_180(vector)
@@ -307,6 +309,110 @@ def compute_trajectory2_wsteps(right_points, left_points):
 
     plt.show()
     return mid_points
+
+
+
+def compute_trajectory2_wsteps_slopes(right_points, left_points):
+    # Assert the points are correctly ordered
+    rpoints = order_point_list(right_points)
+    lpoints = order_point_list(left_points)
+
+    # Add first trajectory point
+    start_point = compute_midpoint(rpoints[0], lpoints[0])
+    mid_points = [start_point]
+
+    # Auxiliary variables
+    last_ri = 0
+    last_li = 0
+    rotated = False
+    # Main loop
+    while last_ri < len(rpoints) - 1 or last_li < len(lpoints) - 1:
+        if last_ri < len(rpoints) - 1 and last_li < len(lpoints) - 1:
+            distr = euclidean_norm(rpoints[last_ri], rpoints[last_ri+1]) + euclidean_norm(lpoints[last_li], rpoints[last_ri+1])
+            distl = euclidean_norm(lpoints[last_li], lpoints[last_li+1]) + euclidean_norm(rpoints[last_ri], lpoints[last_li+1])
+        elif last_ri < len(rpoints) - 1:
+            distr = 0  # Force right side movement
+            distl = float('inf')
+        else:
+            distr = float('inf')
+            distl = 0  # Force left side movement
+
+        if distr <= distl:
+            last_ri += 1
+            last_cone = rpoints[last_ri]
+            other_last_cone = lpoints[last_li]
+            slope = compute_slope(rpoints[last_ri-1], last_cone)
+            # For plotting
+            p1 = rpoints[last_ri-1]
+            p2 = last_cone
+        else:
+            last_li += 1
+            last_cone = lpoints[last_li]
+            other_last_cone = rpoints[last_ri]
+            slope = compute_slope(lpoints[last_li-1], last_cone)
+            # For plotting
+            p1 = lpoints[last_li-1]
+            p2 = last_cone
+        
+        print(f"last ri:{last_ri}, last_li: {last_li}")
+
+        perp_slope = - 1 / slope
+        new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
+
+        #In case the new point is too close or too far to the last cone
+        if euclidean_norm(new_point, last_cone) != 1.5:
+            vector = compute_vector(last_cone, new_point)
+            norm = euclidean_norm(vector, [0,0])
+            vector = [1.5 * vector[0]/norm, 1.5 * vector[1]/norm]
+            new_point2 = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            new_point = new_point2
+            print(f"Too close to last cone, separating to 1.5")
+            
+        # Trying to prevent getting outside with circunferences
+        if euclidean_norm(other_last_cone, last_cone) <= euclidean_norm(other_last_cone ,new_point):
+            vector = compute_vector(last_cone, new_point)
+            vector = rotate_180(vector)
+            # Plot the circles
+            circle1 = plt.Circle(other_last_cone, euclidean_norm(other_last_cone, last_cone), color='black', fill=False)
+            circle2 = plt.Circle(other_last_cone, euclidean_norm(other_last_cone, new_point), color='red', fill=False)
+            prev_rot = new_point
+            rotated = True
+
+            new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            print('Rotated 180º')
+
+            
+            
+
+        mid_points.append(new_point)
+
+        # Order last 3 trajectory points (not needed in most cases, just a safety check)
+        if len(mid_points)>=3:
+            mid_points[-3:] = order_point_list(mid_points[-3:])
+
+        # In case 2 trajectory points are too close, remove them and take the only midpoint
+        if euclidean_norm(mid_points[-1], mid_points[-2]) < 2 :
+            mid_point = [(mid_points[-1][0] + mid_points[-2][0])/2, (mid_points[-1][1] + mid_points[-2][1])/2]
+            mid_points[-2:] = [mid_point]
+            print(f"Removed 2 close points and replaced with midpoint")
+
+        plt.clf()
+        if rotated:
+            plt.gca().add_patch(circle1)
+            plt.gca().add_patch(circle2)
+            plt.scatter([prev_rot[0]], [prev_rot[1]], c='k')
+            rotated = False
+        plt.scatter([p[0] for p in lpoints], [p[1] for p in lpoints], c='b', label='Left cones')
+        plt.scatter([p[0] for p in rpoints], [p[1] for p in rpoints], c='yellow', label='Right cones')
+        plt.scatter([p[0] for p in mid_points], [p[1] for p in mid_points], c='g', label='Mid points')
+        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], c='k', label='Last segment')
+        plt.plot([p2[0], new_point[0]], [p2[1], new_point[1]], c='r', label='Perpendicular line')
+        plt.legend()
+        plt.waitforbuttonpress()
+
+    plt.show()
+    return mid_points
+
 
 
 def plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points):

@@ -161,14 +161,80 @@ def gen_map(filename: str = None, plot: bool = True):
             plt.legend()
             plt.show()
 
+def gen_circular_map(radius: float, num_cones: int, filename: str = None, plot: bool = True):
+    """Generates a circular map with the given radius and number of cones."""
+    map = {'circular_r': [], 'circular_l': []}
+    
+    angle_increment = 360.0 / num_cones
 
+    for i in range(num_cones):
+        angle_degrees = i * angle_increment
+        angle_radians = math.radians(angle_degrees)
+        
+        # Inner cones
+        x_inner = radius * math.cos(angle_radians)
+        y_inner = radius * math.sin(angle_radians)
+        map['circular_r'].append([x_inner, y_inner])
+        
+        # Outer cones (slightly further out)
+        x_outer = (radius + 3) * math.cos(angle_radians)
+        y_outer = (radius + 3) * math.sin(angle_radians)
+        map['circular_l'].append([x_outer, y_outer])
+
+    try:
+        if filename is not None:
+            with open(filename, 'w') as f:
+                # Write right points
+                f.write("RIGHT_POINTS\n")
+                for point in map['circular_r']:
+                    f.write(f"{point[0]} {point[1]}\n")
+                
+                # Write left points
+                f.write("LEFT_POINTS\n")
+                for point in map['circular_l']:
+                    f.write(f"{point[0]} {point[1]}\n")
+            print("Successfully serialized the map points into " + filename)
+        else:
+            print("No filename given for serializing")
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        print("Did not serialize the map")
+
+    finally:
+        print("Plotting the map")
+        if plot:
+            # Plot right points in yellow
+            x, y = zip(*map['circular_r'])
+            plt.scatter(x, y, color='yellow', label='Right Points')
+
+            # Plot left points in blue
+            x, y = zip(*map['circular_l'])
+            plt.scatter(x, y, color='blue', label='Left Points')
+
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            plt.title('Map Points')
+            plt.grid(True)
+            plt.axis('equal')
+            plt.legend()
+            plt.show()
 
 
 if __name__ == "__main__":
     random.seed(3)  # Set a seed for the random numbers
     filename = input("Please enter the filename to save the map points: ")
     if filename == '':
-        filename = None
+        filename = None #This does not save it, only plot it
     if filename is not None and "." not in filename:
         filename = filename + ".dat"
     gen_map(filename)
+
+    # Example of how to use gen_circular_map
+    circular_filename = input("Please enter the filename to save the circular map points: ")
+    if circular_filename == '':
+        circular_filename = None #This does not save it, only plot it
+    if circular_filename is not None and "." not in circular_filename:
+        circular_filename = circular_filename + ".dat"
+    gen_circular_map(radius=20, num_cones=20, 
+    filename=circular_filename)
