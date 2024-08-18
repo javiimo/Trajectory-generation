@@ -481,18 +481,19 @@ def disorder_points(list1, list2):
 
 
 if __name__ == "__main__":
-    filename = 'map.dat'
+    filename = 'circ_map.dat'
     while filename == '':
         filename = input("Please enter the filename to load the map points: ")
         if not os.path.exists(filename):
             print("File does not exist. Please enter a valid filename.")
             filename = ''
     
-    og_right_points, og_left_points = deserialize_points(file_path="map.dat")
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=3)
+    og_right_points, og_left_points = deserialize_points(file_path=filename)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=1)
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
-    mid_points = compute_trajectory2_wsteps_slopes(right_points, left_points)
+    # mid_points = compute_trajectory2_wsteps_slopes(right_points, left_points)
+    mid_points = compute_trajectory2_wsteps_circ(right_points, left_points)
     plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
     
