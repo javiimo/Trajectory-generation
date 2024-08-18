@@ -50,6 +50,13 @@ def rotate_180(vector):
     return [-vector[0], -vector[1]]
 
 
+def get_line_function(slope, point):
+    x1, y1 = point
+    def line_function(x):
+        return slope * (x - x1) + y1
+    return line_function
+
+
 
 
 def find_intersection(slope1, point1, slope2, point2):
