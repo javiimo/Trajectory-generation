@@ -74,7 +74,8 @@ def is_clockwise(vector1, vector2):
     # Calculate the cross product in 2D
     cross_product = x1 * y2 - y1 * x2
     if abs(cross_product)/euclidean_norm(vector1,[0,0])*euclidean_norm(vector2,[0,0]) <= 0.2:
-        return None
+        return None #This is in case the points are aligned, don't rotate
+    
     # If the cross product is negative, the rotation is clockwise
     # If the cross product is positive, the rotation is counterclockwise
     return cross_product < 0
@@ -166,6 +167,7 @@ def compute_trajectory(right_points, left_points, threshold = 1.5):
 
 
 def order_point_list(list):
+    #! Add a way to take as second points the ones in the semiplane ahead of the car
     # Assume the first point is still the first point
     ordered_list = [list[0]] #Assume the first point is ordered correctly
     remaining_points = list[1:]
@@ -601,7 +603,7 @@ if __name__ == "__main__":
             filename = ''
     
     og_right_points, og_left_points = deserialize_points(file_path=filename)
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=3)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=0)
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
