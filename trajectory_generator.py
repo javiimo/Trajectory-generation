@@ -57,7 +57,26 @@ def get_line_function(slope, point):
     return line_function
 
 
+def is_clockwise(vector1, vector2):
+    """
+    Determine if the rotation from vector1 to vector2 is clockwise.
 
+    Parameters:
+    vector1 (list or tuple): The first vector [x, y].
+    vector2 (list or tuple): The second vector [x, y].
+
+    Returns:
+    bool: True if the rotation is clockwise, False if counterclockwise.
+    """
+    x1, y1 = vector1
+    x2, y2 = vector2
+    
+    # Calculate the cross product in 2D
+    cross_product = x1 * y2 - y1 * x2
+    
+    # If the cross product is negative, the rotation is clockwise
+    # If the cross product is positive, the rotation is counterclockwise
+    return cross_product < 0
 
 def find_intersection(slope1, point1, slope2, point2):
     # Unpack the points
@@ -406,6 +425,98 @@ def compute_trajectory2_wsteps_slopes(right_points, left_points):
     return mid_points
 
 
+def compute_trajectory2_wsteps_clockwise(right_points, left_points):
+    # Assert the points are correctly ordered
+    rpoints = order_point_list(right_points)
+    lpoints = order_point_list(left_points)
+
+    # Add first trajectory point
+    start_point = compute_midpoint(rpoints[0], lpoints[0])
+    mid_points = [start_point]
+
+    # Auxiliary variables
+    last_ri = 0
+    last_li = 0
+    # Main loop
+    while last_ri < len(rpoints) - 1 or last_li < len(lpoints) - 1:
+        if last_ri < len(rpoints) - 1 and last_li < len(lpoints) - 1:
+            distr = euclidean_norm(rpoints[last_ri], rpoints[last_ri+1]) + euclidean_norm(lpoints[last_li], rpoints[last_ri+1])
+            distl = euclidean_norm(lpoints[last_li], lpoints[last_li+1]) + euclidean_norm(rpoints[last_ri], lpoints[last_li+1])
+        elif last_ri < len(rpoints) - 1:
+            distr = 0  # Force right side movement
+            distl = float('inf')
+        else:
+            distr = float('inf')
+            distl = 0  # Force left side movement
+
+        if distr <= distl:
+            right = True
+            last_ri += 1
+            last_cone = rpoints[last_ri]
+            other_last_cone = lpoints[last_li]
+            anchor_slope = rpoints[last_ri-1]
+            slope = compute_slope(anchor_slope, last_cone)
+            # For plotting
+            p1 = rpoints[last_ri-1]
+            p2 = last_cone
+        else:
+            right = False
+            last_li += 1
+            last_cone = lpoints[last_li]
+            other_last_cone = rpoints[last_ri]
+            anchor_slope = lpoints[last_li-1]
+            slope = compute_slope(anchor_slope, last_cone)
+            # For plotting
+            p1 = lpoints[last_li-1]
+            p2 = last_cone
+        
+        print(f"last ri:{last_ri}, last_li: {last_li}")
+
+        perp_slope = - 1 / slope
+        new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
+
+        #In case the new point is too close or too far to the last cone
+        if euclidean_norm(new_point, last_cone) != 1.5:
+            vector = compute_vector(last_cone, new_point)
+            norm = euclidean_norm(vector, [0,0])
+            vector = [1.5 * vector[0]/norm, 1.5 * vector[1]/norm]
+            new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            print(f"Too close to last cone, separating to 1.5")
+            
+        # Trying to prevent getting outside with counter-clockwise or clokwise:
+        cond = is_clockwise(compute_vector(mid_points[-1], last_cone), compute_vector(mid_points[-1], new_point))
+        cond = cond if right else not cond
+        if cond == True:
+            vector = compute_vector(last_cone, new_point)
+            vector = rotate_180(vector)
+            new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            print('Rotated 180º')
+
+        mid_points.append(new_point)
+
+        # Order last 3 trajectory points (not needed in most cases, just a safety check)
+        if len(mid_points)>=3:
+            mid_points[-3:] = order_point_list(mid_points[-3:])
+
+        # In case 2 trajectory points are too close, remove them and take the only midpoint
+        if euclidean_norm(mid_points[-1], mid_points[-2]) < 2 :
+            mid_point = [(mid_points[-1][0] + mid_points[-2][0])/2, (mid_points[-1][1] + mid_points[-2][1])/2]
+            mid_points[-2:] = [mid_point]
+            print(f"Removed 2 close points and replaced with midpoint")
+
+        plt.clf()
+        plt.scatter([p[0] for p in lpoints], [p[1] for p in lpoints], c='b', label='Left cones')
+        plt.scatter([p[0] for p in rpoints], [p[1] for p in rpoints], c='yellow', label='Right cones')
+        plt.scatter([p[0] for p in mid_points], [p[1] for p in mid_points], c='g', label='Mid points')
+        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], c='k', label='Last segment')
+        plt.plot([p2[0], new_point[0]], [p2[1], new_point[1]], c='r', label='Perpendicular line')
+        plt.legend()
+        plt.waitforbuttonpress()
+
+    plt.show()
+    return mid_points
+
+
 
 def plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points):
     # Plot mid_points as a black line
@@ -481,7 +592,7 @@ def disorder_points(list1, list2):
 
 
 if __name__ == "__main__":
-    filename = 'circ_map.dat'
+    filename = 'map.dat'
     while filename == '':
         filename = input("Please enter the filename to load the map points: ")
         if not os.path.exists(filename):
@@ -493,7 +604,8 @@ if __name__ == "__main__":
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
-    mid_points = compute_trajectory2_wsteps_slopes(right_points, left_points)
+    # mid_points = compute_trajectory2_wsteps_slopes(right_points, left_points)
     # mid_points = compute_trajectory2_wsteps_circ(right_points, left_points)
+    mid_points = compute_trajectory2_wsteps_clockwise(right_points, left_points)
     plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
     
