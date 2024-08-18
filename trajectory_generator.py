@@ -42,7 +42,7 @@ def scalar_prod(v1, v2):
     return v1[0]*v2[0] + v1[1]*v2[1]
 
 
-def vector(p_i, p_f):
+def compute_vector(p_i, p_f):
     return [p_f[0]-p_i[0], p_f[1]-p_i[1]]
 
 
@@ -241,23 +241,27 @@ def compute_trajectory2_wsteps(right_points, left_points):
             slope = compute_slope(lpoints[last_li-1], last_cone)
             p1 = lpoints[last_li-1]
             p2 = last_cone
+        
+        print(f"last ri:{last_ri}, last_li: {last_li}")
 
         perp_slope = - 1 / slope
         new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
 
         #In case the new point is too close or too far to the last cone
         if euclidean_norm(new_point, last_cone) != 1.5:
-            vector = [new_point[0]-last_cone[0], new_point[1]-last_cone[1]]
+            vector = compute_vector(last_cone, new_point)
             norm = euclidean_norm(vector, [0,0])
             vector = [1.5 * vector[0]/norm, 1.5 * vector[1]/norm]
             new_point2 = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
             new_point = new_point2
             print(f"Too close to last cone, separating to 1.5")
             
-            # Trying to prevent getting outside
-            if euclidean_norm(new_point, other_last_cone)< euclidean_norm(new_point2, other_last_cone):
-                new_point = [ - new_point2[0], - new_point2[1]]
-                print("Taking mid point instead")
+        # Trying to prevent getting outside
+        if euclidean_norm(other_last_cone ,last_cone) < euclidean_norm(other_last_cone ,new_point):
+            vector = compute_vector(last_cone, new_point)
+            vector = rotate_180(vector)
+            new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            print('Rotated 180º')
             
 
         mid_points.append(new_point)
@@ -270,7 +274,7 @@ def compute_trajectory2_wsteps(right_points, left_points):
 
         plt.clf()
         plt.scatter([p[0] for p in lpoints], [p[1] for p in lpoints], c='b', label='Left cones')
-        plt.scatter([p[0] for p in rpoints], [p[1] for p in rpoints], c='y', label='Right cones')
+        plt.scatter([p[0] for p in rpoints], [p[1] for p in rpoints], c='yellow', label='Right cones')
         plt.scatter([p[0] for p in mid_points], [p[1] for p in mid_points], c='g', label='Mid points')
         plt.plot([p1[0], p2[0]], [p1[1], p2[1]], c='k', label='Last segment')
         plt.plot([p2[0], new_point[0]], [p2[1], new_point[1]], c='r', label='Perpendicular line')
