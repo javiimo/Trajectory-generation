@@ -222,20 +222,26 @@ def compute_trajectory2_wsteps(right_points, left_points):
     last_ri = 0
     last_li = 0
     # Main loop
-    while last_ri<len(right_points)-1 or last_li<len(left_points)-1:
-        if last_ri!=len(right_points)-1 and last_li!=len(left_points)-1:
+    while last_ri < len(rpoints) - 1 or last_li < len(lpoints) - 1:
+        if last_ri < len(rpoints) - 1 and last_li < len(lpoints) - 1:
             distr = euclidean_norm(rpoints[last_ri], rpoints[last_ri+1]) + euclidean_norm(lpoints[last_li], rpoints[last_ri+1])
             distl = euclidean_norm(lpoints[last_li], lpoints[last_li+1]) + euclidean_norm(rpoints[last_ri], lpoints[last_li+1])
+        elif last_ri < len(rpoints) - 1:
+            distr = 0  # Force right side movement
+            distl = float('inf')
+        else:
+            distr = float('inf')
+            distl = 0  # Force left side movement
 
-        if distr<=distl or last_li == len(left_points)-1:
-            last_ri +=1
+        if distr <= distl:
+            last_ri += 1
             last_cone = rpoints[last_ri]
             other_last_cone = lpoints[last_li]
             slope = compute_slope(rpoints[last_ri-1], last_cone)
             p1 = rpoints[last_ri-1]
             p2 = last_cone
         else:
-            last_li +=1
+            last_li += 1
             last_cone = lpoints[last_li]
             other_last_cone = rpoints[last_ri]
             slope = compute_slope(lpoints[last_li-1], last_cone)
