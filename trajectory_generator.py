@@ -73,7 +73,8 @@ def is_clockwise(vector1, vector2):
     
     # Calculate the cross product in 2D
     cross_product = x1 * y2 - y1 * x2
-    
+    if abs(cross_product)/euclidean_norm(vector1,[0,0])*euclidean_norm(vector2,[0,0]) <= 0.2:
+        return None
     # If the cross product is negative, the rotation is clockwise
     # If the cross product is positive, the rotation is counterclockwise
     return cross_product < 0
@@ -343,7 +344,6 @@ def compute_trajectory2_wsteps_slopes(right_points, left_points):
     # Auxiliary variables
     last_ri = 0
     last_li = 0
-    rotated = False
     # Main loop
     while last_ri < len(rpoints) - 1 or last_li < len(lpoints) - 1:
         if last_ri < len(rpoints) - 1 and last_li < len(lpoints) - 1:
@@ -484,13 +484,14 @@ def compute_trajectory2_wsteps_clockwise(right_points, left_points):
             print(f"Too close to last cone, separating to 1.5")
             
         # Trying to prevent getting outside with counter-clockwise or clokwise:
-        cond = is_clockwise(compute_vector(mid_points[-1], last_cone), compute_vector(mid_points[-1], new_point))
-        cond = cond if right else not cond
-        if cond == True:
-            vector = compute_vector(last_cone, new_point)
-            vector = rotate_180(vector)
-            new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
-            print('Rotated 180º')
+        cond = is_clockwise(compute_vector(other_last_cone, last_cone), compute_vector(other_last_cone, new_point))
+        if cond is not None: 
+            cond = cond if right else not cond
+            if cond == True:
+                vector = compute_vector(last_cone, new_point)
+                vector = rotate_180(vector)
+                new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+                print('Rotated 180º')
 
         mid_points.append(new_point)
 
@@ -600,7 +601,7 @@ if __name__ == "__main__":
             filename = ''
     
     og_right_points, og_left_points = deserialize_points(file_path=filename)
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=3)
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
