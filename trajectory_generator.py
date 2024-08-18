@@ -26,7 +26,7 @@ def deserialize_points(file_path="map.dat"):
 
 def compute_slope(p1, p2):
     if abs(p1[0] - p2[0]) < 1e-12:  # Check for vertical line with a small threshold
-        return 0
+        return float('inf') if p2[1] > p1[1] else -float('inf')
     return (p2[1] - p1[1]) / (p2[0] - p1[0])
 
 
@@ -341,7 +341,9 @@ def compute_trajectory2_wsteps_slopes(right_points, left_points):
             last_ri += 1
             last_cone = rpoints[last_ri]
             other_last_cone = lpoints[last_li]
-            slope = compute_slope(rpoints[last_ri-1], last_cone)
+            anchor_slope = rpoints[last_ri-1]
+            slope = compute_slope(anchor_slope, last_cone)
+            other_slope = compute_slope(anchor_slope, other_last_cone)
             # For plotting
             p1 = rpoints[last_ri-1]
             p2 = last_cone
@@ -349,7 +351,9 @@ def compute_trajectory2_wsteps_slopes(right_points, left_points):
             last_li += 1
             last_cone = lpoints[last_li]
             other_last_cone = rpoints[last_ri]
-            slope = compute_slope(lpoints[last_li-1], last_cone)
+            anchor_slope = lpoints[last_li-1]
+            slope = compute_slope(anchor_slope, last_cone)
+            other_slope = compute_slope(anchor_slope, other_last_cone)
             # For plotting
             p1 = lpoints[last_li-1]
             p2 = last_cone
@@ -369,20 +373,13 @@ def compute_trajectory2_wsteps_slopes(right_points, left_points):
             print(f"Too close to last cone, separating to 1.5")
             
         # Trying to prevent getting outside with circunferences
-        if euclidean_norm(other_last_cone, last_cone) <= euclidean_norm(other_last_cone ,new_point):
+        slope_list = [slope, other_slope] if slope < other_slope else [other_slope, slope]
+        cond = compute_slope(anchor_slope, new_point) > slope_list[0] and compute_slope(anchor_slope, new_point) < slope_list[1]
+        if cond == False:
             vector = compute_vector(last_cone, new_point)
             vector = rotate_180(vector)
-            # Plot the circles
-            circle1 = plt.Circle(other_last_cone, euclidean_norm(other_last_cone, last_cone), color='black', fill=False)
-            circle2 = plt.Circle(other_last_cone, euclidean_norm(other_last_cone, new_point), color='red', fill=False)
-            prev_rot = new_point
-            rotated = True
-
             new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
             print('Rotated 180º')
-
-            
-            
 
         mid_points.append(new_point)
 
@@ -397,11 +394,6 @@ def compute_trajectory2_wsteps_slopes(right_points, left_points):
             print(f"Removed 2 close points and replaced with midpoint")
 
         plt.clf()
-        if rotated:
-            plt.gca().add_patch(circle1)
-            plt.gca().add_patch(circle2)
-            plt.scatter([prev_rot[0]], [prev_rot[1]], c='k')
-            rotated = False
         plt.scatter([p[0] for p in lpoints], [p[1] for p in lpoints], c='b', label='Left cones')
         plt.scatter([p[0] for p in rpoints], [p[1] for p in rpoints], c='yellow', label='Right cones')
         plt.scatter([p[0] for p in mid_points], [p[1] for p in mid_points], c='g', label='Mid points')
@@ -501,6 +493,6 @@ if __name__ == "__main__":
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
-    mid_points = compute_trajectory2_wsteps(right_points, left_points)
+    mid_points = compute_trajectory2_wsteps_slopes(right_points, left_points)
     plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
     
