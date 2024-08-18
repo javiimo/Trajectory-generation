@@ -270,7 +270,11 @@ def compute_trajectory2_wsteps(right_points, left_points):
         if len(mid_points)>=3:
             mid_points[-3:] = order_point_list(mid_points[-3:])
 
-        print(f"End iteration last ri:{last_ri}, last_li: {last_li}")
+        # In case 2 trajectory points are too close, remove them and take the only midpoint
+        if euclidean_norm(mid_points[-1], mid_points[-2]) < 2 :
+            mid_point = [(mid_points[-1][0] + mid_points[-2][0])/2, (mid_points[-1][1] + mid_points[-2][1])/2]
+            mid_points[-2:] = [mid_point]
+            print(f"Removed 2 close points and replaced with midpoint")
 
         plt.clf()
         plt.scatter([p[0] for p in lpoints], [p[1] for p in lpoints], c='b', label='Left cones')
