@@ -38,6 +38,19 @@ def euclidean_norm(p1, p2):
     return ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2) ** 0.5
 
 
+def scalar_prod(v1, v2):
+    return v1[0]*v2[0] + v1[1]*v2[1]
+
+
+def vector(p_i, p_f):
+    return [p_f[0]-p_i[0], p_f[1]-p_i[1]]
+
+
+def rotate_180(vector):
+    return [-vector[0], -vector[1]]
+
+
+
 
 def find_intersection(slope1, point1, slope2, point2):
     # Unpack the points
