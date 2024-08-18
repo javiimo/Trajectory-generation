@@ -222,12 +222,12 @@ def compute_trajectory2_wsteps(right_points, left_points):
     last_ri = 0
     last_li = 0
     # Main loop
-    while last_ri<len(right_points) or last_li<len(left_points):
-        if last_ri!=len(right_points) and last_li!=len(left_points):
+    while last_ri<len(right_points)-1 or last_li<len(left_points)-1:
+        if last_ri!=len(right_points)-1 and last_li!=len(left_points)-1:
             distr = euclidean_norm(rpoints[last_ri], rpoints[last_ri+1]) + euclidean_norm(lpoints[last_li], rpoints[last_ri+1])
             distl = euclidean_norm(lpoints[last_li], lpoints[last_li+1]) + euclidean_norm(rpoints[last_ri], lpoints[last_li+1])
 
-        if distr<=distl or last_li == len(left_points):
+        if distr<=distl or last_li == len(left_points)-1:
             last_ri +=1
             last_cone = rpoints[last_ri]
             other_last_cone = lpoints[last_li]
@@ -371,6 +371,6 @@ if __name__ == "__main__":
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
-    # plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
     mid_points = compute_trajectory2_wsteps(right_points, left_points)
+    plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
     
