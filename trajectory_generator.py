@@ -218,9 +218,10 @@ def compute_trajectory2_wsteps(right_points, left_points):
     start_point = compute_midpoint(rpoints[0], lpoints[0])
     mid_points = [start_point]
 
-    # Auxiliary indices
+    # Auxiliary variables
     last_ri = 0
     last_li = 0
+    rotated = False
     # Main loop
     while last_ri < len(rpoints) - 1 or last_li < len(lpoints) - 1:
         if last_ri < len(rpoints) - 1 and last_li < len(lpoints) - 1:
@@ -263,11 +264,19 @@ def compute_trajectory2_wsteps(right_points, left_points):
             print(f"Too close to last cone, separating to 1.5")
             
         # Trying to prevent getting outside
-        if euclidean_norm(other_last_cone ,last_cone) < euclidean_norm(other_last_cone ,new_point):
+        if euclidean_norm(other_last_cone, last_cone) <= euclidean_norm(other_last_cone ,new_point):
             vector = compute_vector(last_cone, new_point)
             vector = rotate_180(vector)
+            # Plot the circles
+            circle1 = plt.Circle(other_last_cone, euclidean_norm(other_last_cone, last_cone), color='black', fill=False)
+            circle2 = plt.Circle(other_last_cone, euclidean_norm(other_last_cone, new_point), color='red', fill=False)
+            prev_rot = new_point
+            rotated = True
+
             new_point = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
             print('Rotated 180º')
+
+            
             
 
         mid_points.append(new_point)
@@ -283,6 +292,11 @@ def compute_trajectory2_wsteps(right_points, left_points):
             print(f"Removed 2 close points and replaced with midpoint")
 
         plt.clf()
+        if rotated:
+            plt.gca().add_patch(circle1)
+            plt.gca().add_patch(circle2)
+            plt.scatter([prev_rot[0]], [prev_rot[1]], c='k')
+            rotated = False
         plt.scatter([p[0] for p in lpoints], [p[1] for p in lpoints], c='b', label='Left cones')
         plt.scatter([p[0] for p in rpoints], [p[1] for p in rpoints], c='yellow', label='Right cones')
         plt.scatter([p[0] for p in mid_points], [p[1] for p in mid_points], c='g', label='Mid points')
@@ -377,7 +391,7 @@ if __name__ == "__main__":
             filename = ''
     
     og_right_points, og_left_points = deserialize_points(file_path="map.dat")
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=3)
     right_points, left_points = disorder_points(right_points, left_points)
     # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
     # mid_points = compute_trajectory2(right_points, left_points)
