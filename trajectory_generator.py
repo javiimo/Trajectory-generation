@@ -189,6 +189,78 @@ def compute_trajectory2(right_points, left_points):
     return mid_points
 
 
+def compute_trajectory2_wsteps(right_points, left_points):
+    # Assert the points are correctly ordered
+    rpoints = order_point_list(right_points)
+    lpoints = order_point_list(left_points)
+
+    # Add first trajectory point
+    start_point = compute_midpoint(rpoints[0], lpoints[0])
+    mid_points = [start_point]
+
+    # Auxiliary indices
+    last_ri = 0
+    last_li = 0
+    # Main loop
+    while last_ri<len(right_points) or last_li<len(left_points):
+        if last_ri!=len(right_points) and last_li!=len(left_points):
+            distr = euclidean_norm(rpoints[last_ri], rpoints[last_ri+1]) + euclidean_norm(lpoints[last_li], rpoints[last_ri+1])
+            distl = euclidean_norm(lpoints[last_li], lpoints[last_li+1]) + euclidean_norm(rpoints[last_ri], lpoints[last_li+1])
+
+        if distr<=distl or last_li == len(left_points):
+            last_ri +=1
+            last_cone = rpoints[last_ri]
+            other_last_cone = lpoints[last_li]
+            slope = compute_slope(rpoints[last_ri-1], last_cone)
+            p1 = rpoints[last_ri-1]
+            p2 = last_cone
+        else:
+            last_li +=1
+            last_cone = lpoints[last_li]
+            other_last_cone = rpoints[last_ri]
+            slope = compute_slope(lpoints[last_li-1], last_cone)
+            p1 = lpoints[last_li-1]
+            p2 = last_cone
+
+        perp_slope = - 1 / slope
+        new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
+
+        #In case the new point is too close or too far to the last cone
+        if euclidean_norm(new_point, last_cone) != 1.5:
+            vector = [new_point[0]-last_cone[0], new_point[1]-last_cone[1]]
+            norm = euclidean_norm(vector, [0,0])
+            vector = [1.5 * vector[0]/norm, 1.5 * vector[1]/norm]
+            new_point2 = [last_cone[0] + vector[0], last_cone[1] + vector[1]]
+            new_point = new_point2
+            print(f"Too close to last cone, separating to 1.5")
+            
+            # Trying to prevent getting outside
+            if euclidean_norm(new_point, other_last_cone)< euclidean_norm(new_point2, other_last_cone):
+                new_point = [ - new_point2[0], - new_point2[1]]
+                print("Taking mid point instead")
+            
+
+        mid_points.append(new_point)
+
+        # Order last 3 trajectory points (not needed in most cases, just a safety check)
+        if len(mid_points)>=3:
+            mid_points[-3:] = order_point_list(mid_points[-3:])
+
+        print(f"End iteration last ri:{last_ri}, last_li: {last_li}")
+
+        plt.clf()
+        plt.scatter([p[0] for p in lpoints], [p[1] for p in lpoints], c='b', label='Left cones')
+        plt.scatter([p[0] for p in rpoints], [p[1] for p in rpoints], c='y', label='Right cones')
+        plt.scatter([p[0] for p in mid_points], [p[1] for p in mid_points], c='g', label='Mid points')
+        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], c='k', label='Last segment')
+        plt.plot([p2[0], new_point[0]], [p2[1], new_point[1]], c='r', label='Perpendicular line')
+        plt.legend()
+        plt.waitforbuttonpress()
+
+    plt.show()
+    return mid_points
+
+
 def plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points):
     # Plot mid_points as a black line
     x, y = zip(*[point for point in mid_points if point])  # Filter out empty points
@@ -263,7 +335,7 @@ def disorder_points(list1, list2):
 
 
 if __name__ == "__main__":
-    filename = ''
+    filename = 'map.dat'
     while filename == '':
         filename = input("Please enter the filename to load the map points: ")
         if not os.path.exists(filename):
@@ -271,8 +343,10 @@ if __name__ == "__main__":
             filename = ''
     
     og_right_points, og_left_points = deserialize_points(file_path="map.dat")
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=0)
-    #right_points, left_points = disorder_points(right_points, left_points)
-    #mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
-    mid_points = compute_trajectory2(right_points, left_points)
-    plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
+    right_points, left_points = disorder_points(right_points, left_points)
+    # mid_points = compute_trajectory(right_points, left_points, threshold = 1.5)
+    # mid_points = compute_trajectory2(right_points, left_points)
+    # plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points)
+    mid_points = compute_trajectory2_wsteps(right_points, left_points)
+    
