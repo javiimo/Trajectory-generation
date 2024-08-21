@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 #   - Cone spacing between 7.5m and 12m
 #   - Track width randomly varying between 3m and 5m
 
+# It also generates a circular map with a certain radius and a certain number of cones, but that is a different file and a different function generator.
+
 
 
 angles_first_curve = (90, 67.5, 45, 22.5, 0)
@@ -230,11 +232,10 @@ if __name__ == "__main__":
         filename = filename + ".dat"
     gen_map(filename)
 
-    # Example of how to use gen_circular_map
+    # Also create a circular map file
     circular_filename = input("Please enter the filename to save the circular map points: ")
     if circular_filename == '':
         circular_filename = None #This does not save it, only plot it
     if circular_filename is not None and "." not in circular_filename:
         circular_filename = circular_filename + ".dat"
-    gen_circular_map(radius=20, num_cones=20, 
-    filename=circular_filename)
+    gen_circular_map(radius=20, num_cones=20, filename=circular_filename)
