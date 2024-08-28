@@ -375,8 +375,8 @@ def compute_trajectory(right_points, left_points, semiplane = None):
         plt.plot([last_cone[0], new_point[0]], [last_cone[1], new_point[1]], c='r', label='Perpendicular line')
         plt.plot([mid_points[-2][0], new_point[0]], [mid_points[-2][1], new_point[1]], c='k')
         plt.legend()
-        plt.waitforbuttonpress()
-
+        #plt.waitforbuttonpress()
+        plt.pause(0.5)
     plt.show()
     return mid_points
 
