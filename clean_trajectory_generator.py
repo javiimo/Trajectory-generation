@@ -530,7 +530,7 @@ def disorder_points(list1, list2):
 
 
 if __name__ == "__main__":
-    filename = 'circ_map.dat'
+    filename = ''
     while filename == '':
         filename = input("Please enter the filename to load the map points: ")
         if not os.path.exists(filename):
