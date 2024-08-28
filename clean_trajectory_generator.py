@@ -137,15 +137,22 @@ def find_intersection(slope1, point1, slope2, point2):
     x1, y1 = point1
     x2, y2 = point2
 
+    # Handle cases with infinite or -0.0 slopes
+    if slope1 == float('inf') or slope1 == -0.0:
+        x = x1
+        y = slope2 * (x - x2) + y2
+    elif slope2 == float('inf') or slope2 == -0.0:
+        x = x2
+        y = slope1 * (x - x1) + y1
     # Check if the slopes are the same (parallel lines)
-    if abs(slope1 - slope2) < 1e-14:
+    elif abs(slope1 - slope2) < 1e-14:
         return None  # No intersection (or infinite intersections if they are the same line)
+    else:
+        # Calculate the intersection x-coordinate
+        x = (y2 - y1 + slope1 * x1 - slope2 * x2) / (slope1 - slope2)
 
-    # Calculate the intersection x-coordinate
-    x = (y2 - y1 + slope1 * x1 - slope2 * x2) / (slope1 - slope2)
-
-    # Calculate the intersection y-coordinate using the equation of the first line
-    y = slope1 * x + (y1 - slope1 * x1)
+        # Calculate the intersection y-coordinate using the equation of the first line
+        y = slope1 * x + (y1 - slope1 * x1)
 
     return [x, y]
 
@@ -333,8 +340,9 @@ def compute_trajectory(right_points, left_points, semiplane = None):
             slope = compute_slope(anchor_slope, last_cone)
         
         print(f"last ri:{last_ri}, last_li: {last_li}")
-
+    
         perp_slope = - 1 / slope
+        print(f"slope: {slope}, perp_slope: {perp_slope}")
         new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
 
         #Set the distance to the last cone exactly 1.5
@@ -376,7 +384,7 @@ def compute_trajectory(right_points, left_points, semiplane = None):
         plt.plot([mid_points[-2][0], new_point[0]], [mid_points[-2][1], new_point[1]], c='k')
         plt.legend()
         #plt.waitforbuttonpress()
-        plt.pause(0.5)
+        plt.pause(0.1)
     plt.show()
     return mid_points
 
@@ -522,7 +530,7 @@ def disorder_points(list1, list2):
 
 
 if __name__ == "__main__":
-    filename = ''
+    filename = 'circ_map.dat'
     while filename == '':
         filename = input("Please enter the filename to load the map points: ")
         if not os.path.exists(filename):
