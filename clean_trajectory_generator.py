@@ -384,7 +384,7 @@ def compute_trajectory(right_points, left_points, semiplane = None):
         plt.plot([mid_points[-2][0], new_point[0]], [mid_points[-2][1], new_point[1]], c='k')
         plt.legend()
         #plt.waitforbuttonpress()
-        plt.pause(0.1)
+        plt.pause(0.5)
     plt.show()
     return mid_points
 
