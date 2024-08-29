@@ -201,7 +201,7 @@ def order_point_list_semiplane(list, line_func = None, semiplane = None):
 
     elif callable(line_func):
         remaining_points_copy = remaining_points.copy()
-        while remaining_points_copy and len(ordered_list)<2:
+        while remaining_points_copy:
             closest_point = min(remaining_points_copy, key=lambda point: euclidean_norm(ordered_list[-1], point))
             if line_func(closest_point[0]) * semiplane < closest_point[1] * semiplane:
                 ordered_list.append(closest_point) 
@@ -209,7 +209,7 @@ def order_point_list_semiplane(list, line_func = None, semiplane = None):
             remaining_points_copy.remove(closest_point)
         
         if len(ordered_list)<2:
-            print("Failed to order the points in the given direction")
+            print("Failed to order the points in the given direction. Try changing the chosen semiplane")
         
         while remaining_points:
             closest_point = min(remaining_points, key=lambda point: euclidean_norm(ordered_list[-1], point))
@@ -227,7 +227,7 @@ def order_point_list_semiplane(list, line_func = None, semiplane = None):
             remaining_points_copy.remove(closest_point)
 
         if len(ordered_list)<2:
-            print("Failed to order the points in the given direction")
+            print("Failed to order the points in the given direction. Try changing the chosen semiplane")
         
         while remaining_points:
             closest_point = min(remaining_points, key=lambda point: euclidean_norm(ordered_list[-1], point))
@@ -530,7 +530,7 @@ def disorder_points(list1, list2):
 
 
 if __name__ == "__main__":
-    filename = ''
+    filename = 'circ_map.dat'
     while filename == '':
         filename = input("Please enter the filename to load the map points: ")
         if not os.path.exists(filename):
@@ -539,7 +539,7 @@ if __name__ == "__main__":
     
     og_right_points, og_left_points = deserialize_points(file_path=filename)
     # Change the skip_size to randomly remove more or less consecutive points
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=3)
     right_points, left_points = disorder_points(right_points, left_points)
     #If all points are outside the track, try changing semiplane from +1 to -1 or viceversa
     mid_points = compute_trajectory(right_points, left_points, semiplane=-1)
