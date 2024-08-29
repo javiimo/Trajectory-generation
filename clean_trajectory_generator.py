@@ -341,7 +341,7 @@ def compute_trajectory(right_points, left_points, semiplane = None):
         
         print(f"last ri:{last_ri}, last_li: {last_li}")
     
-        perp_slope = - 1 / slope
+        perp_slope = float('inf') if slope == 0 else -1 / slope
         print(f"slope: {slope}, perp_slope: {perp_slope}")
         new_point = find_intersection(slope, mid_points[-1], perp_slope, last_cone)
 
@@ -530,7 +530,7 @@ def disorder_points(list1, list2):
 
 
 if __name__ == "__main__":
-    filename = 'circ_map.dat'
+    filename = ''
     while filename == '':
         filename = input("Please enter the filename to load the map points: ")
         if not os.path.exists(filename):
@@ -539,7 +539,7 @@ if __name__ == "__main__":
     
     og_right_points, og_left_points = deserialize_points(file_path=filename)
     # Change the skip_size to randomly remove more or less consecutive points
-    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=3)
+    right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
     right_points, left_points = disorder_points(right_points, left_points)
     #If all points are outside the track, try changing semiplane from +1 to -1 or viceversa
     mid_points = compute_trajectory(right_points, left_points, semiplane=-1)
