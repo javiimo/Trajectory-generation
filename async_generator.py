@@ -1,5 +1,4 @@
 import random
-import time
 from utility_funcs import *
 import matplotlib.pyplot as plt
 
@@ -54,13 +53,12 @@ def gen_turn(init_pos, init_dir, width):
     final_pos = add(aux, centre)
 
     # Get points separated radomly between 1 and 4 meters.
+    rad_vect = scalar_mul(rad_vect, -1) #Pointing outwards
     len_curve = angle_to_arc(degree, rad)
     part_curve = random_partition(0, len_curve, 1, 4)
-    angles_curve = list(-arc_to_angle(l, rad) * orientation for l in part_curve)
+    angles_curve = list(arc_to_angle(l, rad) * orientation for l in part_curve)
     rpoints, lpoints = [], []
     for a in angles_curve:
-        print(rad_vect)
-        print(a)
         vect = rotate_vector(rad_vect, a)
         innum = random.uniform(0, 0.1)
         vect_in = scalar_mul(vect, rad - width/2 + innum)
@@ -107,8 +105,12 @@ def plot_track(initial_box, final_pos, final_dir, rpoints, lpoints, centre):
     plt.title('Generated Track')
     plt.legend()
     plt.grid(True)
-    plt.show()
-    
+    plt.axis('equal')  # Ensure equal aspect ratio
+    plt.xlim(centre[0] - 40, centre[0] + 40)  # Set x-axis limits
+    plt.ylim(centre[1] - 40, centre[1] + 40)  # Set y-axis limits
+    plt.show(block=False)
+    plt.pause(2) #Wait for 2 seconds
+
 
 if __name__ == "__main__":
     initial_box = [[3, -2.5], [3, 2.5], [-3, -2.5], [-3, 2.5 ]]
@@ -120,9 +122,13 @@ if __name__ == "__main__":
     plot_initial_box(initial_box)
     all_rpoints = []
     all_lpoints = []
-    for i in range(5):  # Generate 5 different tracks
-        if i == 0:
-            width = 5
+    import time
+    first_iteration = True
+    while True:  # Generate infinite tracks
+
+        if first_iteration:
+            width = 5 #First part of the track matches the initial box width
+            first_iteration = False
         else:
             width = random.uniform(3, 6)  # Random width between 3 and 6
 
@@ -133,7 +139,8 @@ if __name__ == "__main__":
         else:
             init_pos, init_dir, rpoints, lpoints, centre = gen_turn(init_pos, init_dir, width) 
 
-        all_rpoints.extend(rpoints)
-        all_lpoints.extend(lpoints)
+        all_rpoints.extend(rpoints[1:])
+        all_lpoints.extend(lpoints[1:])
 
         plot_track(initial_box, init_pos, init_dir, all_rpoints, all_lpoints, centre)
+        plt.close()
