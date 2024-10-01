@@ -427,6 +427,7 @@ if __name__ == "__main__":
     manager = multiprocessing.Manager()
     right_points = manager.list()
     left_points = manager.list()
+    iter = manager.Value('i', 0)
 
 
     p1 = multiprocessing.Process(target=receiver, args=(right_points, left_points, "5556"))

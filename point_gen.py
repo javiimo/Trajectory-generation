@@ -1,7 +1,7 @@
 import math
 import random
 import matplotlib.pyplot as plt
-
+from utility_funcs import random_partition, get_curve_points
 
 # This script generates a track defined by cone coordinates.
 #
@@ -28,14 +28,6 @@ inner_rad = 9
 external_rad = 12
 straight_line_begining = [21, -21]
 straight_line_end = [101, -21]
-
-def get_curve_points(a, b, radius, angle_degrees):
-    
-    angle_radians = math.radians(angle_degrees)
-    x = a + radius * math.cos(angle_radians)
-    y = b + radius * math.sin(angle_radians)
-    
-    return [x, y]
 
 def get_first_curve():
     
@@ -73,21 +65,7 @@ def get_second_curve():
         
     return {'second_curve_r': ext_points, 'second_curve_l': in_points}
 
-def random_partition(start, end, min_distance, max_distance):
-    if start >= end:
-        return []
 
-    points = [start]
-    while points[-1] < end:
-        next_point = points[-1] + random.uniform(min_distance, max_distance)
-        if next_point > end:
-            break
-        points.append(next_point)
-
-    if points[-1] != end:
-        points.append(end)
-
-    return points
 
 def get_straight_path():
     x_coords = random_partition(straight_line_begining[0], straight_line_end[0], min_distance=7.5, max_distance=12)
