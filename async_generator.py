@@ -15,12 +15,21 @@ def gen_straight_line(init_pos, init_dir, width):
     perp = get_perpendicular_vector(init_dir)
     #Case non vertical line
     if init_pos[0] != final_pos[0]:
-        x_values = random_partition(init_pos[0], final_pos[0], 3, 5)
+        if init_pos[0] < final_pos[0]:
+            x_values = random_partition(init_pos[0], final_pos[0], 3, 5)
+        else:
+            x_values = random_partition(final_pos[0], init_pos[0], 3, 5)
+            x_values.reverse()
+
         line = get_line_function(compute_slope(init_pos, final_pos),init_pos)
         y_values = [line(x) for x in x_values]
     #Case vertical line
     else:
-        y_values = random_partition(init_pos[1], final_pos[1], 3, 5)
+        if init_pos[1] < final_pos[1]:
+            y_values = random_partition(init_pos[1], final_pos[1], 3, 5)
+        else:
+            y_values = random_partition(final_pos[1], init_pos[1], 3, 5)
+            y_values.reverse()
         x_values = [init_pos[0]] * len(y_values)
     
     for x, y in zip(x_values, y_values):
