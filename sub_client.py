@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import random
 import multiprocessing
-
+import time
 
 
 # UTILITY FUNCTIONS FOR THE TRAJECTORY COMPUTATION -----------------------------------------------
@@ -394,20 +394,33 @@ def receiver(right_points, left_points, port = "5556"):
     socket.setsockopt(zmq.SUBSCRIBE, topicr)
     socket.setsockopt(zmq.SUBSCRIBE, topicl)
 
+    # Use a poller for keeping track of available messages
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
 
     # Keep listening to the topics
     while True:
-        string = socket.recv()
-        try:
-            topic, x, y = string.split() 
-            if topic == "0":
-                right_points.append([x,y])
-                #! HERE WE SHOULD ORDER POINTS AS WELL
-            else:
-                left_points.append([x,y])
-            print(f"Topic: {topic} and point: ({x} , {y})")
-        except ValueError:
-            print(f"Received empty message for topic: {string}")
+        socks = dict(poller.poll()) # Block indefinitely until a message arrives
+
+        if socket in socks and socks[socket] == zmq.POLLIN:
+            # Receive all available messages
+            while True:
+                try:
+                    string = socket.recv(zmq.NOBLOCK)
+                    topic, x, y = string.split()
+                    if topic == b'0':
+                        right_points.append([x, y])
+                    else:
+                        left_points.append([x, y])
+                    print(f"Topic: {topic} and point: ({x} , {y})")
+                except zmq.Again:
+                    # No more messages in queue
+                    break
+                except ValueError:
+                    print(f"Received empty message: {string}")
+
+        # Perform 5-second calculations AFTER processing all received messages.
+        time.sleep(5)
 
 def user(right_points, left_points):
     my_r = []
