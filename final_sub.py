@@ -64,7 +64,7 @@ def order_both_lists_of_cones(rpoints, lpoints, reference_point):
     return [rpoints, lpoints]
 
 
-def compute_trajectory(rpoints, lpoints):
+def compute_trajectory(rpoints, lpoints, start_point):
     """Computes the trajectory of the car by iteratively finding the midpoint between the next right and left cones.
 
     This function calculates the car's trajectory based on the positions of right and left cones. It iteratively identifies the next right or left cones and computes the midpoint between them. This midpoint serves as the next point in the trajectory. The algorithm considers the distances between cones to determine which cone to select next, ensuring a smooth and accurate trajectory.
@@ -103,7 +103,7 @@ def compute_trajectory(rpoints, lpoints):
             - There are 2 hyperparameters that depend on the expected separation of the cones and the size of the vehicle, which are the thresholds of stepts g and j
     """
     # Add first trajectory point
-    start_point = compute_midpoint(rpoints[0], lpoints[0])
+    #start_point = compute_midpoint(rpoints[0], lpoints[0])
     mid_points = [start_point]
 
     # Auxiliary variables
@@ -170,8 +170,11 @@ def compute_trajectory(rpoints, lpoints):
 def merge_too_close_points(mid_points, midindex, dist_tol = 3.1):
     # Take all the points from midpoints[midindex:] and apply the following average too every 2 pairs, like to the first 2, the second 2, the third 2... 
     # Since we are substituting 2 points with the middle point, we would be shrinking the midpoints list from midindex and on, that is okey
+    if len(mid_points) == 1:
+        return mid_points
+    
     aux = []
-    skiped = 0 #To prevent merging too many points
+    skipped = 0 #To prevent merging too many points
     for i in range(midindex, -1):
         aux.append(0)
         if euclidean_norm(mid_points[i], mid_points[i+1]) <= dist_tol and skipped < 2:
@@ -210,6 +213,8 @@ def run_sub(port = "5556"):
     
     # Alternate listening to topics with computing the trajectory
     reference_point = [3,0] #Initial position of the car
+    right_points = []
+    left_points = []
     midpoints = []
     print("STARTING THE FIRST WHILE LOOP")
     while True:
@@ -223,9 +228,9 @@ def run_sub(port = "5556"):
                     string = socket.recv(zmq.NOBLOCK)
                     topic, x, y = string.split()
                     if topic == b'0':
-                        right_points.append([x, y])
+                        right_points.append([float(x), float(y)])
                     else:
-                        left_points.append([x, y])
+                        left_points.append([float(x), float(y)])
                     print(f"Topic: {topic} and point: ({x} , {y})")
                 except zmq.Again:
                     # No more messages in queue
@@ -264,13 +269,17 @@ def run_sub(port = "5556"):
             #Get the reference point, the last midpoint we are sure of.
             midindex = min(rindex, lindex) if rindex != -1 and lindex != -1 else 0
             midindex = -1 *(len(rpoints) + len(lpoints) - midindex)
-            reference_point = midpoints(midindex)
+            reference_point = midpoints[midindex]
             
-        mid_points = compute_trajectory(rpoints, lpoints)
-        mid_points = merge_too_close_points(mid_points, midindex, dist_tol = 3.1)
+        new_midpoints = compute_trajectory(rpoints, lpoints, reference_point)
+        midpoints.extend(new_midpoints)
+        aux = -len(new_midpoints) if len(midpoints)!=len(new_midpoints) else -len(new_midpoints)-1
+        print(f"aux is {aux}")
+        print(f"length of midpoints is {len(midpoints)}")
+        midpoints = merge_too_close_points(midpoints, aux, dist_tol = 3.1)
 
         serialize_points(right_points, left_points, filename = "seenpoints", logs_folder="logs")
-        serialize_midpoints(mid_points, filename="midpoints", logs_folder="logs")
+        serialize_midpoints(midpoints, filename="midpoints", logs_folder="logs")
 
 
 
