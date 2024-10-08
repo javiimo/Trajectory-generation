@@ -223,6 +223,7 @@ def run_sub(port = "5556"):
 
         if socket in socks and socks[socket] == zmq.POLLIN:
             # Receive all available messages
+            received_empty = True
             while True:
                 try:
                     string = socket.recv(zmq.NOBLOCK)
@@ -232,11 +233,15 @@ def run_sub(port = "5556"):
                     else:
                         left_points.append([float(x), float(y)])
                     print(f"Topic: {topic} and point: ({x} , {y})")
+                    received_empty = False #Mark that we received a non-empty message
                 except zmq.Again:
                     # No more messages in queue
                     break
                 except ValueError:
                     print(f"Received empty message: {string}")
+                    
+            if received_empty:
+                continue # Go back to the beginning of the outer loop and wait for more messages
 
         print("NOW WE ARE GOING TO DO THE CALCULATIONS")
         # Perform calculations AFTER processing all received messages.
@@ -276,7 +281,7 @@ def run_sub(port = "5556"):
         aux = -len(new_midpoints) if len(midpoints)!=len(new_midpoints) else -len(new_midpoints)-1
         print(f"aux is {aux}")
         print(f"length of midpoints is {len(midpoints)}")
-        midpoints = merge_too_close_points(midpoints, aux, dist_tol = 3.1)
+        #midpoints = merge_too_close_points(midpoints, aux, dist_tol = 3.1)
 
         serialize_points(right_points, left_points, filename = "seenpoints", logs_folder="logs")
         serialize_midpoints(midpoints, filename="midpoints", logs_folder="logs")

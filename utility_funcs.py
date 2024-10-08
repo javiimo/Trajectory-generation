@@ -427,7 +427,7 @@ def serialize_midpoints(mid_points, filename="midpoints", logs_folder="logs"):
         os.makedirs(logs_folder, exist_ok=True)
 
         # Generate timestamped filename
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         file_path = os.path.join(logs_folder, f"{filename}_{timestamp}.log")
 
         with open(file_path, 'w') as file:

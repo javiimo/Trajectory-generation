@@ -126,6 +126,28 @@ def remove_some_cones(og_right_points, og_left_points, skip_size=2):
     return right_points, left_points
 
 
+#! This might be too much, it is very unlikely the car sees accurately a cone too far.
+def disorder_points(list1, list2):
+    """Disorders two lists of points (except for the first point of each list).
+
+    Args:
+        list1: The first list of points.
+        list2: The second list of points.
+
+    Returns:
+        A tuple containing the two disordered lists.
+    """
+    # Create copies of the lists to avoid modifying the originals
+    list1_copy = list1.copy()
+    list2_copy = list2.copy()
+
+    # Shuffle the lists from the second element onwards
+    random.shuffle(list1_copy[1:])
+    random.shuffle(list2_copy[1:])
+
+    return list1_copy, list2_copy
+
+
 def permute_pairs(list1, list2):
     """Permutes or not the pairs of points in both lists.
 
@@ -216,7 +238,8 @@ def run_pub(port = "5556"):
         # Change the skip_size to randomly remove more or less consecutive points
         right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
         # Disorder cones
-        right_points, left_points = permute_pairs(right_points, left_points)
+        #right_points, left_points = permute_pairs(right_points, left_points)
+        right_points, left_points = disorder_points(right_points, left_points)
         #Sending logic
         perception_sender(socket, right_points, left_points)
 
