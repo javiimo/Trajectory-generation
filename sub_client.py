@@ -419,7 +419,8 @@ def receiver(right_points, left_points, port = "5556"):
                 except ValueError:
                     print(f"Received empty message: {string}")
 
-        # Perform 5-second calculations AFTER processing all received messages.
+        # Perform calculations AFTER processing all received messages.
+        #! Order the points, compute the trajectory, empty the right and left lists.
         time.sleep(5)
 
 def user(right_points, left_points):

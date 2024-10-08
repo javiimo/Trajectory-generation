@@ -1,6 +1,7 @@
 import math
 import random
-
+import os
+import datetime
 
 #! LINE FUNCTIONS
 def compute_slope(p1, p2):
@@ -287,3 +288,192 @@ def angle_to_arc(angle_degrees, radius):
   return radius * angle_radians
 
 
+def first_different_index(list1, list2):
+    """
+    Compares two lists and returns the index of the first element that differs between them.
+
+    Args:
+        list1: The first list.
+        list2: The second list.
+
+    Returns:
+        int: The index of the first difference, or -1 if the lists are identical 
+        or one is a prefix of the other.
+    """
+    min_len = min(len(list1), len(list2))
+    for i in range(min_len):
+        if list1[i] != list2[i]:
+            return i
+    return -1  # Lists are identical up to the length of the shorter list
+
+
+#! Serializing and deserializing points
+def deserialize_points(file_path="map.dat"):
+    """
+    Deserializes points from a file into two lists: right_points and left_points.
+
+    The file should have the following format:
+
+    RIGHT_POINTS
+    x1 y1
+    x2 y2
+    ...
+    LEFT_POINTS
+    x1 y1
+    x2 y2
+    ...
+
+    Args:
+        file_path (str): The path to the file containing the points. Defaults to "map.dat".
+
+    Returns:
+        tuple: A tuple containing two lists: right_points and left_points.
+    """
+    right_points = []
+    left_points = []
+    try:
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+            current_list = None
+            for line in lines:
+                line = line.strip()
+                if line == "RIGHT_POINTS":
+                    current_list = right_points
+                elif line == "LEFT_POINTS":
+                    current_list = left_points
+                elif line and current_list is not None:
+                    # Split the line into coordinates and convert to float
+                    point = list(map(float, line.split()))
+                    current_list.append(point)
+
+    except Exception as e:
+        print(f"An error occurred while reading the file: {e}")
+        return None, None  # Return None for both lists in case of an error
+
+    return right_points, left_points
+
+
+def serialize_points(right_points, left_points, filename = "points", logs_folder="logs"):
+    """
+    Serializes two lists of points, right_points and left_points, into a file within the 'logs' folder.
+    The file name is a timestamp.
+
+    The file will have the following format:
+
+    RIGHT_POINTS
+    x1 y1
+    x2 y2
+    ...
+    LEFT_POINTS
+    x1 y1
+    x2 y2
+    ...
+
+    Args:
+        right_points (list): A list of right points, where each point is a list or tuple [x, y].
+        left_points (list): A list of left points, where each point is a list or tuple [x, y].
+        logs_folder (str): The path to the logs folder. Defaults to "logs".
+
+    Returns:
+        bool: True if the points were successfully serialized, False otherwise.
+    """
+    try:
+        # Create the logs folder if it doesn't exist
+        os.makedirs(logs_folder, exist_ok=True)
+
+        # Generate timestamped filename
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        file_path = os.path.join(logs_folder, f"{filename}_{timestamp}.log")
+
+        with open(file_path, 'w') as file:
+            # Write right points
+            file.write("RIGHT_POINTS\n")
+            for point in right_points:
+                file.write(f"{point[0]} {point[1]}\n")
+
+            # Write left points
+            file.write("LEFT_POINTS\n")
+            for point in left_points:
+                file.write(f"{point[0]} {point[1]}\n")
+        return True
+
+    except Exception as e:
+        print(f"An error occurred while writing to the file: {e}")
+        return False
+
+
+def serialize_midpoints(mid_points, filename="midpoints", logs_folder="logs"):
+    """
+    Serializes a list of midpoints into a file within the 'logs' folder.
+    The file name is a timestamp.
+
+    The file will have the following format:
+
+    MID_POINTS
+    x1 y1
+    x2 y2
+    ...
+
+    Args:
+        mid_points (list): A list of midpoints, where each point is a list or tuple [x, y].
+        logs_folder (str): The path to the logs folder. Defaults to "logs".
+
+    Returns:
+        bool: True if the points were successfully serialized, False otherwise.
+    """
+    try:
+        # Create the logs folder if it doesn't exist
+        os.makedirs(logs_folder, exist_ok=True)
+
+        # Generate timestamped filename
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_path = os.path.join(logs_folder, f"{filename}_{timestamp}.log")
+
+        with open(file_path, 'w') as file:
+            # Write midpoints
+            file.write("MID_POINTS\n")
+            for point in mid_points:
+                if point: # Check if the point is not None or empty
+                    file.write(f"{point[0]} {point[1]}\n")
+
+        return True
+
+    except Exception as e:
+        print(f"An error occurred while writing to the file: {e}")
+        return False
+
+
+def deserialize_midpoints(file_path):
+    """
+    Deserializes a list of midpoints from a file.
+
+    Args:
+        file_path (str): The path to the file containing the midpoints.
+
+    Returns:
+        list: A list of midpoints, where each point is a list [x, y], or None if an error occurs.
+    """
+    try:
+        mid_points = []
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+            if lines and lines[0].strip() == "MID_POINTS":
+                for line in lines[1:]:
+                    try:
+                        x, y = map(float, line.split())
+                        mid_points.append([x, y])
+                    except ValueError:
+                        print(f"Skipping invalid line: {line.strip()}")
+                        return None # Or handle the error differently, e.g., continue
+            else:
+                print("Invalid file format. Expected 'MID_POINTS' at the beginning.")
+                return None
+        return mid_points
+
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return None
+    except Exception as e:
+        print(f"An error occurred while reading the file: {e}")
+        return None

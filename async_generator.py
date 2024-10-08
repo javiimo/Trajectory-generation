@@ -131,7 +131,7 @@ if __name__ == "__main__":
     plot_initial_box(initial_box)
     all_rpoints = []
     all_lpoints = []
-    import time
+
     first_iteration = True
     while True:  # Generate infinite tracks
 
