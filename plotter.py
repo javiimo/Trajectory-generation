@@ -2,8 +2,7 @@ from utility_funcs import *
 import time
 import os
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-
+import time
 
 
 def plot_initial_box(initial_box = [[3, -2.5], [3, 2.5], [-3, -2.5], [-3, 2.5 ]]):
@@ -112,6 +111,7 @@ def plotter(logs_folder="logs"):
 
                 plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points, plot_initial_box_flag)
                 plot_initial_box_flag = False
+                time.sleep(1.5)
 
             except Exception as e:
                 print(f"An error occurred during plotting: {e}")
