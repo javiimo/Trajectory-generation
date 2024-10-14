@@ -128,7 +128,7 @@ def remove_some_cones(og_right_points, og_left_points, skip_size=2):
 
 #! This might be too much, it is very unlikely the car sees accurately a cone too far.
 def disorder_points(list1, list2):
-    """Disorders two lists of points (except for the first point of each list).
+    """Disorders two lists of points.
 
     Args:
         list1: The first list of points.
@@ -141,9 +141,9 @@ def disorder_points(list1, list2):
     list1_copy = list1.copy()
     list2_copy = list2.copy()
 
-    # Shuffle the lists from the second element onwards
-    random.shuffle(list1_copy[1:])
-    random.shuffle(list2_copy[1:])
+    # Shuffle the lists
+    random.shuffle(list1_copy)
+    random.shuffle(list2_copy)
 
     return list1_copy, list2_copy
 

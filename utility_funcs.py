@@ -304,7 +304,7 @@ def first_different_index(list1, list2):
     for i in range(min_len):
         if list1[i] != list2[i]:
             return i
-    return -1  # Lists are identical up to the length of the shorter list
+    return min_len   # Lists are identical up to the length of the shorter list
 
 
 #! Serializing and deserializing points

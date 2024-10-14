@@ -58,77 +58,70 @@ def plot_trajectory_and_cones(mid_points=None, right_points=None, left_points=No
 
 def plotter(logs_folder="logs"):
     """
-    Constantly monitors the logs folder for new files and plots the latest data.
+    Plots data from files in the logs folder, matching timestamps between midpoints, seenpoints, and ogpoints.
     """
-    plot_initial_box_flag = True # Flag to plot initial box only in the first iteration
+    plot_initial_box_flag = True
 
-    while True: # Loop indefinitely
-        latest_seen_points_time = 0
-        latest_midpoints_time = 0
-        latest_og_points_time = 0
-
-        right_points, left_points, mid_points, og_right_points, og_left_points = None, None, None, None, None # Initialize to None
-
-        try:
-            files = os.listdir(logs_folder)
-
-            # Find latest files for each category based on timestamp in filename
-            for file in files:
-                try:
-                    if "_" in file: # Check if filename contains "_"
-                        name, timestamp_str = file.split("_", 1)  # Split into name and timestamp
-                        if "." in timestamp_str:
-                            timestamp_str = timestamp_str.split(".")[0] #remove extension if present
-                        timestamp = int(timestamp_str)
-                    else:
-                        print(f"Skipping invalid filename format: {file}")
-                        continue
-
-                    if "seenpoints" in name:
-                        if timestamp > latest_seen_points_time:
-                            latest_seen_points_time = timestamp
-                            latest_seen_points_file = os.path.join(logs_folder, file)
-                    elif "midpoints" in name:
-                        if timestamp > latest_midpoints_time:
-                            latest_midpoints_time = timestamp
-                            latest_midpoints_file = os.path.join(logs_folder, file)
-                    elif "ogpoints" in name:
-                        if timestamp > latest_og_points_time:
-                            latest_og_points_time = timestamp
-                            latest_og_points_file = os.path.join(logs_folder, file)
-
-
-                except ValueError: # Handle files without timestamps or other formats
+    try:
+        files = os.listdir(logs_folder)
+        
+        # Group files by name and sort by timestamp
+        file_groups = {}
+        for file in files:
+            try:
+                if "_" in file and "." in file:
+                    name, timestamp_str = file.split("_", 1)
+                    timestamp_str = timestamp_str.split(".")[0]
+                    timestamp = int(timestamp_str)
+                    file_groups.setdefault(name, []).append((timestamp, file))
+                else:
                     print(f"Skipping invalid filename format: {file}")
-                    continue
 
-            # Deserialize data, handling potential errors
-            if latest_seen_points_time > 0:
-                try:
-                    right_points, left_points = deserialize_points(latest_seen_points_file)
-                except Exception as e:
-                    print(f"Error deserializing seen points: {e}")
-            if latest_midpoints_time > 0:
-                try:
-                    mid_points = deserialize_midpoints(latest_midpoints_file)
-                except Exception as e:
-                    print(f"Error deserializing mid points: {e}")
-            if latest_og_points_time > 0:
-                try:
-                    og_right_points, og_left_points = deserialize_points(latest_og_points_file)
-                except Exception as e:
-                    print(f"Error deserializing original points: {e}")
+            except ValueError:
+                print(f"Skipping invalid filename format: {file}")
 
-            # Plot even if only some data is available
-            plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points, plot_initial_box_flag) # Pass the flag to the plotting function
-            plot_initial_box_flag = False # Set flag to False after the first iteration
+        # Sort files within each group by timestamp
+        for name in file_groups:
+            file_groups[name].sort(key=lambda x: x[0])
 
-        except FileNotFoundError:
-            print(f"Logs folder not found: {logs_folder}")
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        # Assuming 'midpoints' and 'seenpoints' have the same number of files
+        midpoints_files = file_groups.get("midpoints", [])
+        seenpoints_files = file_groups.get("seenpoints", [])
+        ogpoints_files = file_groups.get("ogpoints", [])
 
-        time.sleep(5) # Wait 5 seconds before the next check
+        # Iterate through midpoints and seenpoints, finding matching or previous ogpoints
+        for i in range(len(midpoints_files)):
+            midpoints_timestamp, midpoints_file = midpoints_files[i]
+            seenpoints_timestamp, seenpoints_file = seenpoints_files[i]
+
+            try:
+                mid_points = deserialize_midpoints(os.path.join(logs_folder, midpoints_file))
+                right_points, left_points = deserialize_points(os.path.join(logs_folder, seenpoints_file))
+
+                # Find closest ogpoints file
+                og_right_points, og_left_points = None, None
+                closest_og_timestamp = -1
+                for og_timestamp, og_file in ogpoints_files:
+                    if og_timestamp <= midpoints_timestamp and og_timestamp > closest_og_timestamp:
+                        closest_og_timestamp = og_timestamp
+                        try:
+                            og_right_points, og_left_points = deserialize_points(os.path.join(logs_folder, og_file))
+                        except Exception as e:
+                            print(f"Error deserializing original points: {e}")
+                            og_right_points, og_left_points = None, None  # Reset in case of error
+
+                plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points, plot_initial_box_flag)
+                plot_initial_box_flag = False
+
+            except Exception as e:
+                print(f"An error occurred during plotting: {e}")
+
+
+    except FileNotFoundError:
+        print(f"Logs folder not found: {logs_folder}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 
 
 
