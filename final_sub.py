@@ -162,7 +162,7 @@ def compute_trajectory(rpoints, lpoints, start_point):
 
         # Order last 3 trajectory points (not needed in most cases, just a safety check)
         if len(mid_points)>=3:
-            mid_points[-3:] = order_point_list(mid_points[-3:])
+            mid_points[-3:] = order_point_list(mid_points[-3:], mid_points[-3])
 
         # In case 2 trajectory points are too close, remove them and take only the average point. This is done outside this function
     return mid_points
