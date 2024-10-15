@@ -9,6 +9,7 @@ from utility_funcs import *
 
 def gen_straight_line(init_pos, init_dir, width):
     length = random.randint(2, 8) * 10
+    print(f"STRAIGHT LINE of length {length}m")
     final_pos = [init_pos[0] + length*init_dir[0], init_pos[1] + length*init_dir[1]]
     final_dir = init_dir
 
@@ -26,8 +27,7 @@ def gen_straight_line(init_pos, init_dir, width):
 
         line = get_line_function(compute_slope(init_pos, final_pos),init_pos)
         y_values = [line(x) for x in x_values]
-    #Case vertical line
-    else:
+    else:#Case vertical line
         if init_pos[1] < final_pos[1]:
             y_values = random_partition(init_pos[1], final_pos[1], 3, 5)
         else:
@@ -48,9 +48,9 @@ def gen_turn(init_pos, init_dir, width):
     degree = random.choice([45, 90, 135, 180])
     orientation = random.choice([-1, 1]) #+1 left, -1 right
     if orientation > 0:
-        print("LEFT TURN")
+        print(f"LEFT TURN of {degree} degrees")
     else:
-        print("RIGHT TURN")
+        print(f"RIGHT TURN of {degree} degrees")
     rad = random.randint(9, 25)
     final_dir = rotate_vector(init_dir, degree * orientation)
     
@@ -237,7 +237,7 @@ def run_pub(port = "5556"):
         serialize_points(og_right_points, og_left_points, filename = "ogpoints", logs_folder="logs")
         # Change the skip_size to randomly remove more or less consecutive points
         right_points, left_points = remove_some_cones(og_right_points, og_left_points, skip_size=2)
-        # Disorder cones
+        # Choose disorder all cones or just permute pairs of cones:
         #right_points, left_points = permute_pairs(right_points, left_points)
         right_points, left_points = disorder_points(right_points, left_points)
         #Sending logic

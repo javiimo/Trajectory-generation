@@ -3,6 +3,9 @@ import time
 import os
 import matplotlib.pyplot as plt
 import time
+import cv2
+import os
+import shutil
 
 
 def plot_initial_box(initial_box = [[3, -2.5], [3, 2.5], [-3, -2.5], [-3, 2.5 ]]):
@@ -36,17 +39,20 @@ def plot_trajectory_and_cones(mid_points=None, right_points=None, left_points=No
         ax.scatter(x, y, c='g', label='Midpoints')
 
     # Plot detected cones if available
-    all_detected = right_points + left_points if right_points and left_points else right_points if right_points else left_points if left_points else None # Combine detected points if available
-    if all_detected:
-        x, y = zip(*all_detected)
-        ax.scatter(x, y, c='r', label='Detected cones')
+    if right_points:
+        x, y = zip(*right_points)
+        ax.scatter(x, y, c='y', label='Detected right cones')
+    if left_points:
+        x, y = zip(*left_points)
+        ax.scatter(x, y, c='b', label='Detected left cones')
 
     # Plot undetected cones if available
     if og_right_points and og_left_points: # Only plot undetected if original points are available
+        all_detected = right_points + left_points
         undetected = [p for p in og_right_points + og_left_points if all_detected is None or p not in all_detected]
         if undetected:
             x, y = zip(*undetected)
-            ax.scatter(x, y, c='b', label='Undetected cones')
+            ax.scatter(x, y, c='r', label='Undetected cones')
 
     ax.legend()
     ax.axis('equal')
@@ -55,13 +61,18 @@ def plot_trajectory_and_cones(mid_points=None, right_points=None, left_points=No
     plt.pause(0.001) # Pause to allow the plot to update
 
 
-def plotter(logs_folder="logs"):
+def plotter(logs_folder="logs", video=False):
     """
     Plots data from files in the logs folder, matching timestamps between midpoints, seenpoints, and ogpoints.
+    If video is True, saves plots to a temporary folder and creates a video.
     """
     plot_initial_box_flag = True
+    temporal_folder = "temporal"  # Folder to store temporary images for video
 
     try:
+        if video:
+            os.makedirs(temporal_folder, exist_ok=True)
+
         files = os.listdir(logs_folder)
         
         # Group files by name and sort by timestamp
@@ -111,11 +122,19 @@ def plotter(logs_folder="logs"):
 
                 plot_trajectory_and_cones(mid_points, right_points, left_points, og_right_points, og_left_points, plot_initial_box_flag)
                 plot_initial_box_flag = False
-                time.sleep(1.5)
+
+                if video:
+                    plt.savefig(os.path.join(temporal_folder, f"frame_{i:04d}.png"))
+                else:
+                    #time.sleep(1.5)
+                    plt.waitforbuttonpress()
 
             except Exception as e:
                 print(f"An error occurred during plotting: {e}")
 
+        if video:
+            create_video_from_images(temporal_folder, "output.mp4")  # Create video
+            shutil.rmtree(temporal_folder)  # Remove temporary folder
 
     except FileNotFoundError:
         print(f"Logs folder not found: {logs_folder}")
@@ -125,8 +144,37 @@ def plotter(logs_folder="logs"):
 
 
 
+def create_video_from_images(image_folder, output_video_path, fps=1):
+    """Creates a video from a sequence of images in a folder.
+
+    Args:
+        image_folder: Path to the folder containing the image sequence.
+        output_video_path: Path to the output video file.
+        fps: Frames per second for the output video.
+    """
+    images = [img for img in os.listdir(image_folder) if img.endswith(".png")]
+    images.sort()  # Ensure images are in correct order
+
+    if not images:
+        print("No images found in the specified folder.")
+        return
+
+    frame = cv2.imread(os.path.join(image_folder, images[0]))
+    height, width, layers = frame.shape
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Use mp4v codec
+    video = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+
+    for image in images:
+        video.write(cv2.imread(os.path.join(image_folder, image)))
+
+    cv2.destroyAllWindows()
+    video.release()
+
+
+
 if __name__ == "__main__":
-    plotter("logs")
+    plotter("logs", video=True)
 
 
 

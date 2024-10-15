@@ -15,7 +15,7 @@ def compute_slope(p1, p2):
     Returns:
         float: The slope of the line. Returns float('inf') if the line is vertical.
     """
-    if abs(p1[0] - p2[0]) < 1e-14:  # Check for vertical line with a small threshold
+    if abs(p1[0] - p2[0]) == 0:  # Check for vertical line with a small threshold
         return float('inf')
     return (p2[1] - p1[1]) / (p2[0] - p1[0])
 

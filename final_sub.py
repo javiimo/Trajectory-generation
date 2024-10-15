@@ -160,47 +160,44 @@ def compute_trajectory(rpoints, lpoints, start_point):
 
         mid_points.append(new_point)
 
-        # Order last 3 trajectory points (not needed in most cases, just a safety check)
-        if len(mid_points)>=3:
-            mid_points[-3:] = order_point_list(mid_points[-3:], mid_points[-3])
 
         # In case 2 trajectory points are too close, remove them and take only the average point. This is done outside this function
     return mid_points
 
-def merge_too_close_points(mid_points, dist_tol=3.1):
+def merge_too_close_points(points, dist_tol=3.1):
     """Merges points in a list that are closer than a given distance tolerance. But does not merge more than 2 consecutive points.
     Does a second pass of merging so that it merges up to 3 or 4 consecutive points if they are still very very close to each other
 
     Args:
-        mid_points: A list of points, where each point is a list of coordinates [x, y].
+        points: A list of points, where each point is a list of coordinates [x, y].
         dist_tol: The distance tolerance below which points are merged.
 
     Returns:
         A new list of points with close points merged.
     """
-    if not mid_points:  # Handle empty list case
+    if not points:  # Handle empty list case
         return []
 
-    if len(mid_points) == 1:
-        return mid_points
+    if len(points) == 1:
+        return points
     
     merged_points =[]
     i = 0
-    while i < len(mid_points) -1:
-        if euclidean_norm(mid_points[i], mid_points[i+1]) <= dist_tol:
-            merged_points.append(compute_midpoint(mid_points[i], mid_points[i + 1]))
+    while i < len(points) -1:
+        if euclidean_norm(points[i], points[i+1]) <= dist_tol:
+            merged_points.append(compute_midpoint(points[i], points[i + 1]))
             i +=2 # Skip the next point since it was already merged
         else:
-            merged_points.append(mid_points[i])
+            merged_points.append(points[i])
             i += 1
 
-    if i == len(mid_points) -1: # Add the last point if it wasn't merged
-        merged_points.append(mid_points[i])
+    if i == len(points) -1: # Add the last point if it wasn't merged
+        merged_points.append(points[i])
 
     i = 0
     merged_points2 = []
     while i < len(merged_points) - 1:
-        if euclidean_norm(merged_points[i], merged_points[i+1]) <= dist_tol/3:
+        if euclidean_norm(merged_points[i], merged_points[i+1]) <= dist_tol/2:
             merged_points2.append(compute_midpoint(merged_points[i], merged_points[i + 1]))
             i += 2
         else:
@@ -233,14 +230,13 @@ def run_sub(port = "5556"):
 
     
     # Alternate listening to topics with computing the trajectory
-    reference_point = [0,0] #Initial position of the car
     right_points = [[3, -2.5]] #Initial orange right cone
     left_points = [[3, 2.5]] #Initial orange left cone
-    rpoints = []
-    lpoints = []
-    r = l = 0  # Auxiliary index to count the new points that entered in each iteration
-    midpoints = []
-    print("STARTING THE FIRST WHILE LOOP")
+    midpoints = [[3,0]] #This is the initial position of the car
+    r = l = skipped = 0 #This is just for trimming the list of midpoints
+    lim = 10 #Number of cones to keep.
+    reference_point = midpoints[0]
+    final_midpoints = []
     while True:
         print("USING THE POLLER TO GET ALL THE MESSAGES")
         socks = dict(poller.poll()) # Block indefinitely until a message arrives
@@ -254,10 +250,8 @@ def run_sub(port = "5556"):
                     topic, x, y = string.split()
                     if topic == b'0':
                         right_points.append([float(x), float(y)])
-                        r += 1 
                     else:
                         left_points.append([float(x), float(y)])
-                        l += 1
                     print(f"Topic: {topic} and point: ({x} , {y})")
                     received_empty = False #Mark that we received a non-empty message
                 except zmq.Again:
@@ -272,64 +266,41 @@ def run_sub(port = "5556"):
         print("NOW WE ARE GOING TO DO THE CALCULATIONS")
         # Perform calculations AFTER processing all received messages.
         # To prevent the lists from getting too long, we will only keep track of the last 20 cones.
-        right_points = right_points[-20:]
-        left_points = left_points[-20:]
-        midpoints = midpoints[-40:] #The number of midpoints should be >= the sum of the other 2 lists
-
+        if len(right_points)> lim:
+            r += len(right_points) - lim
+            right_points = right_points[-lim:]
         
-        ord_right_points, ord_left_points = order_both_lists_of_cones(right_points, left_points, reference_point)
+        if len(left_points)> lim:
+            l += len(left_points) - lim
+            left_points = left_points[-lim:]
+        if r > 0 or l > 0:
+            print(f"{midpoints[0]} before trim")
+            skip = min(r,l) #The number of points we are removing from midpoints
+            final_midpoints.extend(midpoints[:skip-skipped])
+            print(f"Skipped points: {skipped}")
+            serialize_midpoints(final_midpoints, filename="midpoints", logs_folder="logs") #final midpoints are only added when we remove cones, so the rest of midpoints should be added at then end of execution, when no more new cones are detected.
+            reference_point = midpoints[skip-skipped].copy()
+            print(f"{midpoints[0]} after trim trim")
+            print(f"Reference point: {reference_point}")
+            skipped += skip - skipped
+        
+        right_points, left_points = order_both_lists_of_cones(right_points, left_points, reference_point)
                
 
-        print(f"midpoints before compute: {midpoints}")
         # In case we have already computed midpoints, we want to check whether the new points will change some midpoints or not and go back to where the midpoints might start changing so that we only recompute the trajectories that are different with new info, not the whole trajectories
-        if midpoints:
-            #We want to see how many points are different and 
-            rdifelems = len(right_points) - first_different_index(ord_right_points, right_points)
-            ldifelems = len(left_points) - first_different_index(ord_left_points, left_points)
-
-            if max(r, rdifelems) != 0: #If there is something different or a new point
-                rpoints = ord_right_points[-(max(r, rdifelems)+1):] #Take only the elements that are new
-            else:
-                rpoints = ord_right_points[-1:]#if there is nothing new respect to last iteration
-            
-            if max(l, ldifelems) != 0: #If there is something different or a new point
-                lpoints = ord_left_points[-(max(l, ldifelems)+1):]
-            else:
-                lpoints = ord_left_points[-1:] #if all the points are the same
-            
-            #Get the reference point, the last midpoint we are sure of.
-            midindex = 0
-            if rdifelems > r:
-                midindex += rdifelems
-            if ldifelems > l:
-                midindex += ldifelems
-
-            midindex = min(midindex,len(midpoints))
-            reference_point = midpoints[-midindex]
-            midpoints = midpoints[:-midindex] if midindex != 0 else midpoints[:-1] #We always remove the reference point from midpoints, because we add it later.
-        else:
-            rpoints = ord_right_points
-            lpoints = ord_left_points
+        midpoints = compute_trajectory(right_points, left_points, reference_point)
         
-        print(f"right_points: {right_points}")
-        print(f"rpoints: {rpoints}")
-        print(f"left_points: {left_points}")
-        print(f"lpoints: {lpoints}")
-        new_midpoints = compute_trajectory(rpoints, lpoints, reference_point)
-        midpoints.extend(new_midpoints)
-        print(f"new_midpoints: {new_midpoints}")
-        print(f"midpoints after compute: {midpoints}")
-        print(f"length of midpoints is {len(midpoints)}")
-        merged_midpoints = merge_too_close_points(midpoints, dist_tol = 3.1)
-        print(f"midpoints after merge: {merged_midpoints}")
+        print(f"length of midpoints after computations is {len(midpoints)}")
+
+        #To prevent points to be too close to each other we will do some merging: 
+        right_points = merge_too_close_points(right_points, dist_tol = 3)
+        left_points = merge_too_close_points(left_points, dist_tol = 3)
+        merged_midpoints = merge_too_close_points(midpoints, dist_tol = 3.5)
+        #print(f"midpoints after merge: {merged_midpoints}")
 
         # Serialize
-        serialize_points(ord_right_points, ord_left_points, filename = "seenpoints", logs_folder="logs")
+        serialize_points(right_points, left_points, filename = "seenpoints", logs_folder="logs")
         serialize_midpoints(merged_midpoints, filename="midpoints", logs_folder="logs")
-
-        r = l = 0 #reset the counter before receiving again
-        right_points = ord_right_points
-        left_points = ord_left_points
 
 
 

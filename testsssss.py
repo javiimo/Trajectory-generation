@@ -1,102 +1,69 @@
-import unittest
 from utility_funcs import *
 
+def gen_straight_line(init_pos, init_dir, width):
+    length = random.randint(2, 8) * 10
+    print(f"STRAIGHT LINE of length {length}m")
+    final_pos = [init_pos[0] + length*init_dir[0], init_pos[1] + length*init_dir[1]]
+    final_dir = init_dir
 
-def merge_too_close_points(mid_points, dist_tol=3.1):
-    """Merges points in a list that are closer than a given distance tolerance. But does not merge more than 2 consecutive points.
-    Does a second pass of merging so that it merges up to 3 or 4 consecutive points if they are very very close to each other
-
-    Args:
-        mid_points: A list of points, where each point is a list of coordinates [x, y].
-        dist_tol: The distance tolerance below which points are merged.
-
-    Returns:
-        A new list of points with close points merged.
-    """
-    if not mid_points:  # Handle empty list case
-        return []
-
-    if len(mid_points) == 1:
-        return mid_points
-    
-    merged_points =[]
-    i = 0
-    while i < len(mid_points) -1:
-        if euclidean_norm(mid_points[i], mid_points[i+1]) <= dist_tol:
-            merged_points.append(compute_midpoint(mid_points[i], mid_points[i + 1]))
-            i +=2 # Skip the next point since it was already merged
+    w = width/2
+    rpoints = []
+    lpoints = []
+    perp = get_perpendicular_vector(init_dir)
+    #Case non vertical line
+    if init_pos[0] != final_pos[0]:
+        if init_pos[0] < final_pos[0]:
+            x_values = random_partition(init_pos[0], final_pos[0], 3, 5)
         else:
-            merged_points.append(mid_points[i])
-            i += 1
+            x_values = random_partition(final_pos[0], init_pos[0], 3, 5)
+            x_values.reverse()
 
-    if i == len(mid_points) -1: # Add the last point if it wasn't merged
-        merged_points.append(mid_points[i])
-
-    i = 0
-    merged_points2 = []
-    while i < len(merged_points) - 1:
-        if euclidean_norm(merged_points[i], merged_points[i+1]) <= dist_tol/2:
-            merged_points2.append(compute_midpoint(merged_points[i], merged_points[i + 1]))
-            i += 2
+        line = get_line_function(compute_slope(init_pos, final_pos),init_pos)
+        y_values = [line(x) for x in x_values]
+    else:#Case vertical line
+        if init_pos[1] < final_pos[1]:
+            y_values = random_partition(init_pos[1], final_pos[1], 3, 5)
         else:
-            merged_points2.append(merged_points[i])
-            i += 1
-    if i == len(merged_points) - 1:
-        merged_points2.append(merged_points[i])
-
-
-    return merged_points2
-
-
-class TestMergeTooClosePoints(unittest.TestCase):
-
-    def test_empty_list(self):
-        self.assertEqual(merge_too_close_points([]), [])
-
-    def test_single_point(self):
-        self.assertEqual(merge_too_close_points([[1, 2]]), [[1, 2]])
-
-    def test_two_close_points(self):
-        points = [[1, 2], [1.1, 2.2]]
-        merged_points = merge_too_close_points(points)
-        self.assertEqual(len(merged_points), 1)
-        self.assertAlmostEqual(merged_points[0][0], 1.05)
-        self.assertAlmostEqual(merged_points[0][1], 2.1)
+            y_values = random_partition(final_pos[1], init_pos[1], 3, 5)
+            y_values.reverse()
+        x_values = [init_pos[0]] * len(y_values)
     
-    def test_two_distant_points(self):
-        points = [[1,2], [4,5]]
-        merged_points = merge_too_close_points(points)
-        self.assertEqual(len(merged_points), 2)
-        self.assertEqual(merged_points, [[1,2], [4,5]])
+    for x, y in zip(x_values, y_values):
+        lnum = random.uniform(0, 0.15)
+        lpoints.append([x + (w + lnum)*perp[0], y + (w + lnum)*perp[1]])
+        
+        rnum = random.uniform(0, 0.15)
+        rpoints.append([x - (w + rnum)*perp[0], y - (w + rnum)*perp[1]])
+    return final_pos, final_dir, rpoints, lpoints
 
-    def test_three_close_points(self):
-        points = [[1, 2], [1.1, 2.1], [1.2, 2.2]]
-        merged_points = merge_too_close_points(points)
-        self.assertEqual(len(merged_points), 1)
-        self.assertAlmostEqual(merged_points[0][0], 1.1)
-        self.assertAlmostEqual(merged_points[0][1], 2.1)
 
-    def test_several_points(self):
-        points = [[1,1], [1.1, 1.1], [2,3], [2.1, 3.1], [4,5], [7,7], [7.2, 7.2]]
-        merged_points = merge_too_close_points(points, dist_tol=0.3)
-        self.assertEqual(len(merged_points), 4)
-        self.assertAlmostEqual(merged_points[0][0], 1.05)
-        self.assertAlmostEqual(merged_points[0][1], 1.05)
-        self.assertAlmostEqual(merged_points[1][0], 2.05)
-        self.assertAlmostEqual(merged_points[1][1], 3.05)
-        self.assertEqual(merged_points[2], [4,5])
-        self.assertAlmostEqual(merged_points[3][0], 7.1)
-        self.assertAlmostEqual(merged_points[3][1], 7.1)
+init_pos1 = [20, -50]
+init_dir1 = [0, 1]
+width1 = 2
+final_pos1, final_dir1, rpoints1, lpoints1 = gen_straight_line(init_pos1, init_dir1, width1)
 
-    def test_alternating_close_and_distant(self):
-        points = [[1, 2], [1.1, 2.1], [3, 4], [5, 6], [5.1, 6.1]]
-        merged_points = merge_too_close_points(points)
-        self.assertEqual(len(merged_points), 3)
-        self.assertAlmostEqual(merged_points[0][0], 1.05)
-        self.assertAlmostEqual(merged_points[0][1], 2.1)
-        self.assertEqual(merged_points[1], [3, 4])
-        self.assertAlmostEqual(merged_points[2][0], 5.05)
-        self.assertAlmostEqual(merged_points[2][1], 6.05)
+init_pos2 = [30, 50]
+init_dir2 = [0, -1]
+width2 = 2
+final_pos2, final_dir2, rpoints2, lpoints2 = gen_straight_line(init_pos2, init_dir2, width2)
 
-if __name__ == '__main__':
-    unittest.main()
+
+import matplotlib.pyplot as plt
+x1 = [p[0] for p in rpoints1]
+y1 = [p[1] for p in rpoints1]
+x2 = [p[0] for p in lpoints1]
+y2 = [p[1] for p in lpoints1]
+
+plt.plot(x1, y1, 'r*')
+plt.plot(x2, y2, 'b*')
+
+x1 = [p[0] for p in rpoints2]
+y1 = [p[1] for p in rpoints2]
+x2 = [p[0] for p in lpoints2]
+y2 = [p[1] for p in lpoints2]
+
+plt.plot(x1, y1, 'r*')
+plt.plot(x2, y2, 'b*')
+
+plt.show()
+
