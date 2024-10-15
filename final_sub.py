@@ -274,13 +274,11 @@ def run_sub(port = "5556"):
             l += len(left_points) - lim
             left_points = left_points[-lim:]
         if r > 0 or l > 0:
-            print(f"{midpoints[0]} before trim")
             skip = min(r,l) #The number of points we are removing from midpoints
             final_midpoints.extend(midpoints[:skip-skipped])
             print(f"Skipped points: {skipped}")
             serialize_midpoints(final_midpoints, filename="midpoints", logs_folder="logs") #final midpoints are only added when we remove cones, so the rest of midpoints should be added at then end of execution, when no more new cones are detected.
             reference_point = midpoints[skip-skipped].copy()
-            print(f"{midpoints[0]} after trim trim")
             print(f"Reference point: {reference_point}")
             skipped += skip - skipped
         
@@ -291,12 +289,13 @@ def run_sub(port = "5556"):
         midpoints = compute_trajectory(right_points, left_points, reference_point)
         
         print(f"length of midpoints after computations is {len(midpoints)}")
-
+        print(f"Right points: {right_points}")
+        print(f"Left points: {left_points}")
+        print(f"Midpoints: {midpoints}")
         #To prevent points to be too close to each other we will do some merging: 
         right_points = merge_too_close_points(right_points, dist_tol = 3)
         left_points = merge_too_close_points(left_points, dist_tol = 3)
         merged_midpoints = merge_too_close_points(midpoints, dist_tol = 3.5)
-        #print(f"midpoints after merge: {merged_midpoints}")
 
         # Serialize
         serialize_points(right_points, left_points, filename = "seenpoints", logs_folder="logs")
