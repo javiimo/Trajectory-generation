@@ -164,7 +164,7 @@ The script was intended to run in multithreading but since I did not manage to d
 
 In order to make it simpler to change to C++, the idea was to don't use any fancy library that might not be in C++ unless it was strictly necessary. So here are the geometric manipulations and some functions that are not that important but are used in the implementation.
 
-// Notice that these function are not very polished and there are duplications. For example, it is the same to call the `rotate_180` or the `rotate_vector` with degrees=180. So it can be hugely improved.
+    Notice that these function are not very polished and there are duplications. For example, it is the same to call the `rotate_180` or the `rotate_vector` with degrees=180. So it can be hugely improved.
 
 ## Line Functions
 
