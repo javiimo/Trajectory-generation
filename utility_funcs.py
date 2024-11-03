@@ -252,14 +252,6 @@ def random_partition(start, end, min_distance, max_distance):
     return points
 
 
-def get_curve_points(a, b, radius, angle_degrees):
-    
-    angle_radians = math.radians(angle_degrees)
-    x = a + radius * math.cos(angle_radians)
-    y = b + radius * math.sin(angle_radians)
-    
-    return [x, y]
-
 
 def arc_to_angle(arc_length, radius):
   """Calculates the angle increment in degrees for a given arc length and radius.

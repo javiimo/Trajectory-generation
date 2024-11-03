@@ -265,7 +265,7 @@ def run_sub(port = "5556"):
 
         print("NOW WE ARE GOING TO DO THE CALCULATIONS")
         # Perform calculations AFTER processing all received messages.
-        # To prevent the lists from getting too long, we will only keep track of the last 20 cones.
+        # To prevent the lists from getting too long, we will only keep track of the last cones.
         if len(right_points)> lim:
             r += len(right_points) - lim
             right_points = right_points[-lim:]

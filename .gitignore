@@ -1,4 +1,4 @@
 .vscode/
-*.png
+.png
 test.py
 logs/

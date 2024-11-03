@@ -102,7 +102,7 @@ def plotter(logs_folder="logs", video=False):
         # Iterate through midpoints and seenpoints, finding matching or previous ogpoints
         for i in range(len(midpoints_files)):
             midpoints_timestamp, midpoints_file = midpoints_files[i]
-            seenpoints_timestamp, seenpoints_file = seenpoints_files[i]
+            seenpoints_timestamp, seenpoints_file = seenpoints_files[i] #seenpoints_timestamp is not used because the amount of logs is the exact same sa the one from midpoints
 
             try:
                 mid_points = deserialize_midpoints(os.path.join(logs_folder, midpoints_file))

@@ -227,7 +227,6 @@ def run_pub(port = "5556"):
             width = width + width_increment  # Random width between 3 and 6 that changes "smoothly"
 
         if random.choice([True, False]):  # Randomly choose between straight line and turn
-            aux = init_pos[:]
             init_pos, init_dir, rpoints, lpoints = gen_straight_line(init_pos, init_dir, width)
         else:
             init_pos, init_dir, rpoints, lpoints = gen_turn(init_pos, init_dir, width) 
